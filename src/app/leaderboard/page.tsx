@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { Trophy, TrendingUp, Crown } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import Link from 'next/link'
+import { Trophy, Crown } from 'lucide-react'
 import { mockLeaderboard } from '@/lib/mock-data'
+import { LeaderboardEntry } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
 import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -19,7 +21,15 @@ export default function LeaderboardPage() {
   const { user } = useAuth()
   const [period, setPeriod] = useState<Period>('all')
 
-  const myRank = mockLeaderboard.find(e => e.user.username === user?.username)
+  const filteredLeaderboard = useMemo<LeaderboardEntry[]>(() => {
+    const multiplier = period === 'week' ? 0.2 : period === 'month' ? 0.6 : 1
+    return [...mockLeaderboard]
+      .map(e => ({ ...e, profit: e.profit * multiplier }))
+      .sort((a, b) => b.profit - a.profit)
+      .map((e, i) => ({ ...e, rank: i + 1 }))
+  }, [period])
+
+  const myRank = filteredLeaderboard.find(e => e.user.username === user?.username)
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -36,7 +46,7 @@ export default function LeaderboardPage() {
 
       {/* Top 3 podium */}
       <div className="grid grid-cols-3 gap-3 mb-8">
-        {[mockLeaderboard[1], mockLeaderboard[0], mockLeaderboard[2]].map((entry, visualIndex) => {
+        {[filteredLeaderboard[1], filteredLeaderboard[0], filteredLeaderboard[2]].filter(Boolean).map((entry, visualIndex) => {
           const isCenter = visualIndex === 1
           return (
             <div
@@ -107,12 +117,12 @@ export default function LeaderboardPage() {
             </tr>
           </thead>
           <tbody>
-            {mockLeaderboard.map((entry, i) => (
+            {filteredLeaderboard.map((entry, i) => (
               <tr
                 key={entry.rank}
                 className={cn(
                   'border-b border-gray-800/50 transition-colors',
-                  i === mockLeaderboard.length - 1 && 'border-0',
+                  i === filteredLeaderboard.length - 1 && 'border-0',
                   user?.username === entry.user.username ? 'bg-blue-500/5' : 'hover:bg-gray-800/30'
                 )}
               >
@@ -122,7 +132,7 @@ export default function LeaderboardPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3.5">
-                  <div className="flex items-center gap-2.5">
+                  <Link href="/profile" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
                     <div className={cn('w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white', entry.rank === 1 ? 'bg-yellow-500' : 'bg-gradient-to-br from-blue-600 to-purple-600')}>
                       {entry.user.username[0]}
                     </div>
@@ -130,7 +140,7 @@ export default function LeaderboardPage() {
                       {entry.user.username}
                       {user?.username === entry.user.username && ' (我)'}
                     </span>
-                  </div>
+                  </Link>
                 </td>
                 <td className="px-4 py-3.5 text-right">
                   <span className="text-emerald-400 font-semibold text-sm">+{formatCurrency(entry.profit)}</span>

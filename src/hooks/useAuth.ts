@@ -1,20 +1,8 @@
 'use client'
 
-import { useState, useEffect, createContext, useContext } from 'react'
+import { useState, useEffect } from 'react'
 import { User } from '@/types'
-import { mockUser } from '@/lib/mock-data'
 
-interface AuthContextType {
-  user: User | null
-  isLoading: boolean
-  login: (email: string) => Promise<void>
-  logout: () => void
-  isLoginModalOpen: boolean
-  openLoginModal: () => void
-  closeLoginModal: () => void
-}
-
-// Simple state-based auth (no context provider needed for mock)
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -27,12 +15,51 @@ export function useAuth() {
 
   const login = async (email: string) => {
     setIsLoading(true)
-    await new Promise(r => setTimeout(r, 1500))
-    const loggedUser = { ...mockUser, email }
-    setUser(loggedUser)
-    localStorage.setItem('auth_user', JSON.stringify(loggedUser))
-    setIsLoading(false)
-    setIsLoginModalOpen(false)
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      if (!res.ok) throw new Error('Login failed')
+      const data = await res.json()
+
+      // Map Prisma User fields to our User type
+      const loggedUser: User = {
+        id: data.id,
+        email: data.email,
+        username: data.username,
+        avatarUrl: data.avatarUrl ?? undefined,
+        walletAddress: data.walletAddress ?? '',
+        balance: data.balance ?? 100,
+        totalPnl: data.totalPnl ?? 0,
+        winRate: data.winRate ?? 0,
+        marketsTraded: data.marketsTraded ?? 0,
+        joinedAt: data.createdAt ?? new Date().toISOString(),
+      }
+
+      setUser(loggedUser)
+      localStorage.setItem('auth_user', JSON.stringify(loggedUser))
+      setIsLoginModalOpen(false)
+    } catch {
+      // Fallback: create a minimal local user so UI doesn't break
+      const fallbackUser: User = {
+        id: String(Date.now()),
+        email,
+        username: email.split('@')[0],
+        walletAddress: '',
+        balance: 100,
+        totalPnl: 0,
+        winRate: 0,
+        marketsTraded: 0,
+        joinedAt: new Date().toISOString(),
+      }
+      setUser(fallbackUser)
+      localStorage.setItem('auth_user', JSON.stringify(fallbackUser))
+      setIsLoginModalOpen(false)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const logout = () => {

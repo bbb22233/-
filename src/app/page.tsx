@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { Search, TrendingUp, Flame, Zap } from 'lucide-react'
 import { MarketCard } from '@/components/markets/MarketCard'
-import { mockMarkets } from '@/lib/mock-data'
+import { useMarkets } from '@/hooks/useMarkets'
 import { MarketCategory } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -46,11 +46,19 @@ const allCategories: CategoryOption[] = categoryGroups.flatMap(g => g.items)
 
 type SortType = 'volume' | 'newest' | 'ending'
 
-const stats = [
-  { label: '总交易量', value: '$87.4M', icon: TrendingUp, color: 'text-blue-400' },
-  { label: '活跃市场', value: String(mockMarkets.filter(m => m.status === 'active').length), icon: Flame, color: 'text-orange-400' },
-  { label: '市场总数', value: String(mockMarkets.length), icon: Zap, color: 'text-yellow-400' },
-]
+function MarketCardSkeleton() {
+  return (
+    <div className="rounded-xl border border-gray-800 bg-gray-900 p-4 animate-pulse">
+      <div className="h-4 bg-gray-800 rounded w-3/4 mb-3" />
+      <div className="h-3 bg-gray-800 rounded w-1/2 mb-4" />
+      <div className="h-2 bg-gray-800 rounded-full mb-3" />
+      <div className="flex justify-between">
+        <div className="h-3 bg-gray-800 rounded w-1/4" />
+        <div className="h-3 bg-gray-800 rounded w-1/4" />
+      </div>
+    </div>
+  )
+}
 
 export default function HomePage() {
   const [search, setSearch] = useState('')
@@ -58,25 +66,22 @@ export default function HomePage() {
   const [sort, setSort] = useState<SortType>('volume')
   const [showResolved, setShowResolved] = useState(false)
 
-  const filtered = useMemo(() => {
-    let list = mockMarkets
-    if (!showResolved) list = list.filter(m => m.status !== 'resolved')
-    if (category !== 'All') list = list.filter(m => m.category === category)
-    if (search) list = list.filter(m =>
-      m.title.toLowerCase().includes(search.toLowerCase()) ||
-      m.tags.some(t => t.toLowerCase().includes(search.toLowerCase()))
-    )
-    if (sort === 'volume') list = [...list].sort((a, b) => b.volume - a.volume)
-    if (sort === 'newest') list = [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    if (sort === 'ending') list = [...list].sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
-    return list
-  }, [search, category, sort, showResolved])
+  const { markets, isLoading } = useMarkets({ category, sort, search, showResolved })
 
-  // Featured = top 4 by volume, active only
-  const featured = useMemo(() =>
-    mockMarkets.filter(m => m.status === 'active').sort((a, b) => b.volume - a.volume).slice(0, 4),
-    []
+  // Featured = top 4 active markets by volume (already sorted by volume from API)
+  const featured = useMemo(
+    () => markets.filter(m => m.status === 'active').slice(0, 4),
+    [markets]
   )
+
+  const activeCount = useMemo(() => markets.filter(m => m.status === 'active').length, [markets])
+  const totalCount = markets.length
+
+  const stats = [
+    { label: '总交易量', value: '$87.4M', icon: TrendingUp, color: 'text-blue-400' },
+    { label: '活跃市场', value: String(activeCount), icon: Flame, color: 'text-orange-400' },
+    { label: '市场总数', value: String(totalCount), icon: Zap, color: 'text-yellow-400' },
+  ]
 
   const showFeatured = category === 'All' && !search
 
@@ -174,11 +179,17 @@ export default function HomePage() {
             <Flame className="w-4 h-4 text-orange-400" />
             <h2 className="text-sm font-semibold text-white">热门市场</h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {featured.map(market => (
-              <MarketCard key={market.id} market={market} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {Array.from({ length: 4 }).map((_, i) => <MarketCardSkeleton key={i} />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {featured.map(market => (
+                <MarketCard key={market.id} market={market} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -186,13 +197,17 @@ export default function HomePage() {
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-semibold text-white">
           {category === 'All' ? '全部市场' : allCategories.find(c => c.value === category)?.label}
-          <span className="text-gray-500 font-normal ml-2">({filtered.length})</span>
+          <span className="text-gray-500 font-normal ml-2">({markets.length})</span>
         </h2>
       </div>
 
-      {filtered.length > 0 ? (
+      {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map(market => (
+          {Array.from({ length: 8 }).map((_, i) => <MarketCardSkeleton key={i} />)}
+        </div>
+      ) : markets.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {markets.map(market => (
             <MarketCard key={market.id} market={market} />
           ))}
         </div>

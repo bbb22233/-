@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Loader2, AlertCircle, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +25,7 @@ export function TradingPanel({ market, onOpenLogin }: TradingPanelProps) {
   const [slippage, setSlippage] = useState('1')
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [tradeError, setTradeError] = useState<string | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
 
   const price = outcome === 'yes' ? market.yesPrice : market.noPrice
@@ -37,10 +39,22 @@ export function TradingPanel({ market, onOpenLogin }: TradingPanelProps) {
     if (!user) { onOpenLogin(); return }
     if (!amount || parseFloat(amount) <= 0) return
     setIsLoading(true)
-    await new Promise(r => setTimeout(r, 1800))
-    setIsLoading(false)
-    setSuccess(true)
-    setTimeout(() => { setSuccess(false); setAmount('') }, 2500)
+    setTradeError(null)
+    try {
+      const res = await fetch(`/api/markets/${market.id}/trade`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, type: 'buy', outcome, amount: parseFloat(amount) }),
+      })
+      if (!res.ok) throw new Error('trade failed')
+      setSuccess(true)
+      setAmount('')
+      setTimeout(() => setSuccess(false), 2500)
+    } catch {
+      setTradeError('交易失败，请重试')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   if (market.status === 'resolved') {
@@ -184,10 +198,21 @@ export function TradingPanel({ market, onOpenLogin }: TradingPanelProps) {
           </div>
         )}
 
+        {/* Error message */}
+        {tradeError && (
+          <div className="flex items-center gap-2 text-xs text-red-400 bg-red-400/10 rounded-lg px-3 py-2">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            {tradeError}
+          </div>
+        )}
+
         {/* CTA */}
         {success ? (
-          <div className="w-full py-3 rounded-lg bg-emerald-500/20 text-emerald-400 text-sm font-medium text-center">
-            交易成功！✓
+          <div className="w-full py-3 rounded-lg bg-emerald-500/20 text-emerald-400 text-sm font-medium text-center space-y-1">
+            <div>交易成功！✓</div>
+            <Link href="/portfolio" className="block text-xs text-emerald-300 underline underline-offset-2 hover:text-emerald-200">
+              查看持仓
+            </Link>
           </div>
         ) : (
           <Button

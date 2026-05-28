@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, use } from 'react'
+import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Users, MessageCircle, Clock, TrendingUp, Share2, Bookmark, Info } from 'lucide-react'
-import { mockMarkets, generatePriceHistory, mockComments } from '@/lib/mock-data'
+import { generatePriceHistory } from '@/lib/mock-data'
 import { PriceChart } from '@/components/charts/PriceChart'
 import { TradingPanel } from '@/components/markets/TradingPanel'
 import { CommentSection } from '@/components/markets/CommentSection'
@@ -12,16 +12,85 @@ import { LoginModal } from '@/components/auth/LoginModal'
 import { useAuth } from '@/hooks/useAuth'
 import { formatVolume, formatDate, timeUntil, getCategoryColor } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { Market, Comment } from '@/types'
+
+function LoadingSkeleton() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-6 animate-pulse">
+      <div className="h-4 bg-gray-800 rounded w-32 mb-6" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
+            <div className="h-6 bg-gray-800 rounded w-3/4 mb-3" />
+            <div className="h-4 bg-gray-800 rounded w-full mb-2" />
+            <div className="h-4 bg-gray-800 rounded w-5/6 mb-6" />
+            <div className="h-3 bg-gray-800 rounded-full mb-3" />
+            <div className="grid grid-cols-4 gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="bg-gray-800 rounded-lg h-16" />
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="lg:col-span-1">
+          <div className="rounded-xl border border-gray-800 bg-gray-900 h-64" />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function MarketPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const market = mockMarkets.find(m => m.id === id)
   const { isLoginModalOpen, openLoginModal, closeLoginModal } = useAuth()
   const [loginModalOpen, setLoginModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'chart' | 'comments' | 'info'>('chart')
   const [bookmarked, setBookmarked] = useState(false)
+  const [copied, setCopied] = useState(false)
 
-  if (!market) {
+  const [market, setMarket] = useState<Market | null>(null)
+  const [comments, setComments] = useState<Comment[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setIsLoading(true)
+    setNotFound(false)
+
+    Promise.all([
+      fetch(`/api/markets/${id}`).then(r => {
+        if (r.status === 404) return null
+        if (!r.ok) throw new Error('Failed to fetch market')
+        return r.json()
+      }),
+      fetch(`/api/markets/${id}/comments`).then(r => {
+        if (!r.ok) return []
+        return r.json()
+      }),
+    ])
+      .then(([marketData, commentsData]) => {
+        if (cancelled) return
+        if (!marketData) {
+          setNotFound(true)
+        } else {
+          setMarket(marketData)
+          setComments(commentsData ?? [])
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setNotFound(true)
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false)
+      })
+
+    return () => { cancelled = true }
+  }, [id])
+
+  if (isLoading) return <LoadingSkeleton />
+
+  if (notFound || !market) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
         <p className="text-gray-400">市场不存在</p>
@@ -68,9 +137,23 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                   <button onClick={() => setBookmarked(!bookmarked)} className={cn('p-2 rounded-lg transition-colors', bookmarked ? 'text-yellow-400 bg-yellow-400/10' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800')}>
                     <Bookmark className={cn('w-4 h-4', bookmarked && 'fill-yellow-400')} />
                   </button>
-                  <button className="p-2 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors">
-                    <Share2 className="w-4 h-4" />
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(window.location.href)
+                        setCopied(true)
+                        setTimeout(() => setCopied(false), 2000)
+                      }}
+                      className="p-2 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </button>
+                    {copied && (
+                      <span className="absolute right-0 top-full mt-1 px-2 py-1 rounded-md bg-emerald-500 text-white text-xs whitespace-nowrap z-10">
+                        链接已复制
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -118,7 +201,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
                       activeTab === tab ? 'text-white border-blue-500' : 'text-gray-500 border-transparent hover:text-gray-300'
                     )}
                   >
-                    {tab === 'chart' ? '价格走势' : tab === 'comments' ? `评论 (${mockComments.length})` : '规则'}
+                    {tab === 'chart' ? '价格走势' : tab === 'comments' ? `评论 (${comments.length})` : '规则'}
                   </button>
                 ))}
               </div>
@@ -136,7 +219,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
 
               {activeTab === 'comments' && (
                 <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
-                  <CommentSection comments={mockComments} onOpenLogin={() => setLoginModalOpen(true)} />
+                  <CommentSection comments={comments} marketId={market.id} onOpenLogin={() => setLoginModalOpen(true)} />
                 </div>
               )}
 

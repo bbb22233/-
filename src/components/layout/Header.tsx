@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { TrendingUp, Trophy, PlusCircle, Wallet, LogOut, User, Menu, X, BarChart2 } from 'lucide-react'
+import { TrendingUp, Trophy, PlusCircle, Wallet, LogOut, User, BarChart2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LoginModal } from '@/components/auth/LoginModal'
 import { useAuth } from '@/hooks/useAuth'
@@ -20,7 +20,6 @@ const navLinks = [
 export function Header() {
   const pathname = usePathname()
   const { user, logout, isLoginModalOpen, openLoginModal, closeLoginModal } = useAuth()
-  const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
 
   return (
@@ -94,32 +93,9 @@ export function Header() {
                 登录 / 注册
               </Button>
             )}
-            {/* Mobile menu */}
-            <button className="md:hidden text-gray-400 hover:text-white p-1" onClick={() => setMobileOpen(!mobileOpen)}>
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
           </div>
         </div>
 
-        {/* Mobile Nav */}
-        {mobileOpen && (
-          <div className="md:hidden border-t border-gray-800 bg-gray-950 px-4 py-3 space-y-1">
-            {navLinks.map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  'flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                  pathname === link.href ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                )}
-                onClick={() => setMobileOpen(false)}
-              >
-                <link.icon className="w-4 h-4" />
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        )}
       </header>
 
       <LoginModal open={isLoginModalOpen} onClose={closeLoginModal} />

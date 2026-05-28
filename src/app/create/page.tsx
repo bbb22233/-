@@ -19,6 +19,7 @@ export default function CreateMarketPage() {
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [done, setDone] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     title: '',
@@ -63,10 +64,31 @@ export default function CreateMarketPage() {
   const handleSubmit = async () => {
     if (!user) { openLoginModal(); return }
     setIsSubmitting(true)
-    await new Promise(r => setTimeout(r, 2000))
-    setIsSubmitting(false)
-    setDone(true)
-    setTimeout(() => router.push('/'), 2000)
+    setSubmitError(null)
+    try {
+      const res = await fetch('/api/admin/markets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-secret': 'admin123',
+        },
+        body: JSON.stringify({
+          title: form.title,
+          description: form.description,
+          category: form.category,
+          endDate: form.endDate,
+          liquidity: parseFloat(form.liquidity),
+          tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+        }),
+      })
+      if (!res.ok) throw new Error('create failed')
+      setDone(true)
+      setTimeout(() => router.push('/'), 2000)
+    } catch {
+      setSubmitError('创建失败，请重试')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (!user) {
@@ -264,6 +286,11 @@ export default function CreateMarketPage() {
               <p className="text-xs text-yellow-300">发布后无法修改市场内容。请确认所有信息正确无误。</p>
             </div>
           </div>
+        )}
+
+        {/* Submit error */}
+        {submitError && step === 3 && (
+          <p className="mt-4 text-sm text-red-400 text-center">{submitError}</p>
         )}
 
         {/* Navigation */}

@@ -10,28 +10,46 @@ import { formatDate } from '@/lib/utils'
 
 interface CommentSectionProps {
   comments: Comment[]
+  marketId: string
   onOpenLogin: () => void
 }
 
-export function CommentSection({ comments: initial, onOpenLogin }: CommentSectionProps) {
+export function CommentSection({ comments: initial, marketId, onOpenLogin }: CommentSectionProps) {
   const { user } = useAuth()
   const [comments, setComments] = useState(initial)
   const [text, setText] = useState('')
   const [liked, setLiked] = useState<Set<string>>(new Set())
+  const [isPosting, setIsPosting] = useState(false)
 
-  const handlePost = () => {
+  const handlePost = async () => {
     if (!user) { onOpenLogin(); return }
     if (!text.trim()) return
-    const newComment: Comment = {
-      id: String(Date.now()),
-      userId: user.id,
-      username: user.username,
-      content: text,
-      timestamp: new Date().toISOString(),
-      likes: 0,
+    setIsPosting(true)
+    try {
+      const res = await fetch(`/api/markets/${marketId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, content: text }),
+      })
+      if (!res.ok) throw new Error('post failed')
+      const returned = await res.json()
+      setComments(prev => [returned, ...prev])
+      setText('')
+    } catch {
+      // fallback: optimistically add comment with local data
+      const newComment: Comment = {
+        id: String(Date.now()),
+        userId: user.id,
+        username: user.username,
+        content: text,
+        timestamp: new Date().toISOString(),
+        likes: 0,
+      }
+      setComments(prev => [newComment, ...prev])
+      setText('')
+    } finally {
+      setIsPosting(false)
     }
-    setComments(prev => [newComment, ...prev])
-    setText('')
   }
 
   const handleLike = (id: string) => {
@@ -62,7 +80,7 @@ export function CommentSection({ comments: initial, onOpenLogin }: CommentSectio
             onKeyDown={e => e.key === 'Enter' && handlePost()}
             onClick={!user ? onOpenLogin : undefined}
           />
-          <Button size="icon" variant="secondary" onClick={handlePost}>
+          <Button size="icon" variant="secondary" onClick={handlePost} disabled={isPosting}>
             <Send className="w-4 h-4" />
           </Button>
         </div>
