@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     })
 
     await resend.emails.send({
-      from: 'CryptoPredict <noreply@resend.dev>',
+      from: 'CryptoPredict <onboarding@resend.dev>',
       to: email,
       subject: '您的登录验证码',
       html: `
