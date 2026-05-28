@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Users, MessageCircle, Clock, TrendingUp, Share2, Bookmark, Info } from 'lucide-react'
 import { generatePriceHistory } from '@/lib/mock-data'
@@ -99,7 +99,7 @@ export default function MarketPage({ params }: { params: Promise<{ id: string }>
     )
   }
 
-  const priceHistory = generatePriceHistory(market.yesPrice)
+  const priceHistory = useMemo(() => generatePriceHistory(market.yesPrice), [market.id])
   const yesPercent = Math.round(market.yesPrice * 100)
 
   return (

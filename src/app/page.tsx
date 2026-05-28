@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Search, TrendingUp, Flame, Zap } from 'lucide-react'
 import { MarketCard } from '@/components/markets/MarketCard'
 import { useMarkets } from '@/hooks/useMarkets'
@@ -61,10 +61,17 @@ function MarketCardSkeleton() {
 }
 
 export default function HomePage() {
+  const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<MarketCategory | 'All'>('All')
   const [sort, setSort] = useState<SortType>('volume')
   const [showResolved, setShowResolved] = useState(false)
+
+  // Debounce search: wait 300ms after user stops typing before fetching
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 300)
+    return () => clearTimeout(t)
+  }, [searchInput])
 
   const { markets, isLoading } = useMarkets({ category, sort, search, showResolved })
 
@@ -83,7 +90,7 @@ export default function HomePage() {
     { label: '市场总数', value: String(totalCount), icon: Zap, color: 'text-yellow-400' },
   ]
 
-  const showFeatured = category === 'All' && !search
+  const showFeatured = category === 'All' && !searchInput
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -120,8 +127,8 @@ export default function HomePage() {
             type="text"
             placeholder="搜索市场、标签..."
             className="w-full h-10 pl-9 pr-4 rounded-lg border border-gray-700 bg-gray-900 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
           />
         </div>
         <select

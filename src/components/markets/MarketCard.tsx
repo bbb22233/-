@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import Link from 'next/link'
 import { Users, MessageCircle, Clock, TrendingUp, TrendingDown } from 'lucide-react'
 import { Market } from '@/types'
@@ -11,7 +12,7 @@ interface MarketCardProps {
   market: Market
 }
 
-export function MarketCard({ market }: MarketCardProps) {
+export const MarketCard = memo(function MarketCard({ market }: MarketCardProps) {
   const yesPercent = Math.round(market.yesPrice * 100)
   const isResolved = market.status === 'resolved'
 
@@ -75,4 +76,4 @@ export function MarketCard({ market }: MarketCardProps) {
       </div>
     </Link>
   )
-}
+})
