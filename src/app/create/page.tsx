@@ -10,7 +10,7 @@ import { LoginModal } from '@/components/auth/LoginModal'
 import { MarketCategory } from '@/types'
 import { cn } from '@/lib/utils'
 
-const categories: MarketCategory[] = ['BTC', 'ETH', 'DeFi', 'Layer2', 'Regulation', 'NFT']
+const categories: MarketCategory[] = ['BTC', 'ETH', 'DeFi', 'Layer2', 'NFT', 'Regulation', 'Politics', 'Elections', 'Sports', 'Entertainment', 'AI', 'Tech', 'Economy', 'World']
 const resolutionSources = ['Chainlink Oracle', '管理员手动结算', 'CoinGecko API', 'Dune Analytics']
 
 export default function CreateMarketPage() {

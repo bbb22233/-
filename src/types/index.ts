@@ -1,4 +1,8 @@
-export type MarketCategory = 'BTC' | 'ETH' | 'DeFi' | 'Layer2' | 'Regulation' | 'NFT' | 'All'
+export type MarketCategory =
+  | 'All'
+  | 'BTC' | 'ETH' | 'DeFi' | 'Layer2' | 'NFT' | 'Regulation'
+  | 'Politics' | 'Elections' | 'Sports' | 'Entertainment'
+  | 'AI' | 'Tech' | 'Economy' | 'World'
 
 export type MarketStatus = 'active' | 'resolved' | 'pending'
 

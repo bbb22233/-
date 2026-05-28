@@ -40,6 +40,14 @@ export function getCategoryColor(category: string): string {
     Layer2: 'text-cyan-400 bg-cyan-400/10',
     Regulation: 'text-red-400 bg-red-400/10',
     NFT: 'text-pink-400 bg-pink-400/10',
+    Politics: 'text-rose-400 bg-rose-400/10',
+    Elections: 'text-red-400 bg-red-400/10',
+    Sports: 'text-green-400 bg-green-400/10',
+    Entertainment: 'text-yellow-400 bg-yellow-400/10',
+    AI: 'text-violet-400 bg-violet-400/10',
+    Tech: 'text-sky-400 bg-sky-400/10',
+    Economy: 'text-emerald-400 bg-emerald-400/10',
+    World: 'text-indigo-400 bg-indigo-400/10',
   }
   return map[category] || 'text-gray-400 bg-gray-400/10'
 }

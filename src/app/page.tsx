@@ -1,29 +1,55 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search, TrendingUp, Flame, Clock, ChevronRight, Zap } from 'lucide-react'
+import { Search, TrendingUp, Flame, Zap } from 'lucide-react'
 import { MarketCard } from '@/components/markets/MarketCard'
 import { mockMarkets } from '@/lib/mock-data'
 import { MarketCategory } from '@/types'
-import { formatVolume } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
-const categories: { label: string; value: MarketCategory | 'All' }[] = [
-  { label: '全部', value: 'All' },
-  { label: '₿ BTC', value: 'BTC' },
-  { label: 'Ξ ETH', value: 'ETH' },
-  { label: 'DeFi', value: 'DeFi' },
-  { label: 'Layer2', value: 'Layer2' },
-  { label: '监管', value: 'Regulation' },
-  { label: 'NFT', value: 'NFT' },
+type CategoryOption = { label: string; value: MarketCategory | 'All' }
+
+const categoryGroups: { label: string; items: CategoryOption[] }[] = [
+  {
+    label: '加密货币',
+    items: [
+      { label: '全部', value: 'All' },
+      { label: '₿ BTC', value: 'BTC' },
+      { label: 'Ξ ETH', value: 'ETH' },
+      { label: 'DeFi', value: 'DeFi' },
+      { label: 'Layer2', value: 'Layer2' },
+      { label: 'NFT', value: 'NFT' },
+      { label: '监管', value: 'Regulation' },
+    ],
+  },
+  {
+    label: '时事',
+    items: [
+      { label: '🗳 政治', value: 'Politics' },
+      { label: '🗳 选举', value: 'Elections' },
+      { label: '🌍 世界', value: 'World' },
+      { label: '📈 经济', value: 'Economy' },
+    ],
+  },
+  {
+    label: '科技娱乐',
+    items: [
+      { label: '🤖 AI', value: 'AI' },
+      { label: '💻 科技', value: 'Tech' },
+      { label: '⚽ 体育', value: 'Sports' },
+      { label: '🎬 娱乐', value: 'Entertainment' },
+    ],
+  },
 ]
+
+const allCategories: CategoryOption[] = categoryGroups.flatMap(g => g.items)
 
 type SortType = 'volume' | 'newest' | 'ending'
 
 const stats = [
-  { label: '总交易量', value: '$14.2M', icon: TrendingUp, color: 'text-blue-400' },
-  { label: '活跃市场', value: '7', icon: Flame, color: 'text-orange-400' },
-  { label: '本周新增', value: '3', icon: Zap, color: 'text-yellow-400' },
+  { label: '总交易量', value: '$87.4M', icon: TrendingUp, color: 'text-blue-400' },
+  { label: '活跃市场', value: String(mockMarkets.filter(m => m.status === 'active').length), icon: Flame, color: 'text-orange-400' },
+  { label: '市场总数', value: String(mockMarkets.length), icon: Zap, color: 'text-yellow-400' },
 ]
 
 export default function HomePage() {
@@ -36,30 +62,39 @@ export default function HomePage() {
     let list = mockMarkets
     if (!showResolved) list = list.filter(m => m.status !== 'resolved')
     if (category !== 'All') list = list.filter(m => m.category === category)
-    if (search) list = list.filter(m => m.title.toLowerCase().includes(search.toLowerCase()) || m.tags.some(t => t.toLowerCase().includes(search.toLowerCase())))
+    if (search) list = list.filter(m =>
+      m.title.toLowerCase().includes(search.toLowerCase()) ||
+      m.tags.some(t => t.toLowerCase().includes(search.toLowerCase()))
+    )
     if (sort === 'volume') list = [...list].sort((a, b) => b.volume - a.volume)
     if (sort === 'newest') list = [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     if (sort === 'ending') list = [...list].sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
     return list
   }, [search, category, sort, showResolved])
 
+  // Featured = top 4 by volume, active only
+  const featured = useMemo(() =>
+    mockMarkets.filter(m => m.status === 'active').sort((a, b) => b.volume - a.volume).slice(0, 4),
+    []
+  )
+
+  const showFeatured = category === 'All' && !search
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Hero */}
-      <div className="mb-10">
+      <div className="mb-8">
         <div className="flex items-center gap-2 text-blue-400 text-sm mb-3">
           <Zap className="w-4 h-4" />
           <span>基于链上智能合约，公开透明</span>
         </div>
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
-          预测加密货币市场走势
+          预测任何事件的结果
         </h1>
         <p className="text-gray-400 text-lg mb-6 max-w-2xl">
-          对你的判断下注，赢取收益。支持邮箱登录，自动生成智能钱包，无需助记词。
+          加密货币、政治、体育、AI……对你的判断下注，赢取收益。
         </p>
-
-        {/* Stats */}
-        <div className="flex flex-wrap gap-4 mb-8">
+        <div className="flex flex-wrap gap-3">
           {stats.map(s => (
             <div key={s.label} className="flex items-center gap-2 bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5">
               <s.icon className={cn('w-4 h-4', s.color)} />
@@ -72,8 +107,8 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Search & Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      {/* Search & Sort */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
           <input
@@ -95,39 +130,66 @@ export default function HomePage() {
         </select>
       </div>
 
-      {/* Category tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
-        {categories.map(cat => (
+      {/* Category filter - grouped */}
+      <div className="mb-6 space-y-2">
+        {categoryGroups.map(group => (
+          <div key={group.label} className="flex items-center gap-2">
+            <span className="text-xs text-gray-600 w-14 shrink-0 hidden sm:block">{group.label}</span>
+            <div className="flex gap-1.5 overflow-x-auto pb-1 flex-wrap">
+              {group.items.map(cat => (
+                <button
+                  key={cat.value}
+                  onClick={() => setCategory(cat.value)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0',
+                    category === cat.value
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-900 border border-gray-800 text-gray-400 hover:text-white hover:border-gray-600'
+                  )}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+        <div className="flex items-center gap-2 pt-1">
+          <span className="text-xs text-gray-600 w-14 shrink-0 hidden sm:block" />
           <button
-            key={cat.value}
-            onClick={() => setCategory(cat.value)}
+            onClick={() => setShowResolved(!showResolved)}
             className={cn(
-              'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors shrink-0',
-              category === cat.value
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-900 border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500'
+              'px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+              showResolved ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-900 border-gray-800 text-gray-500 hover:text-gray-300'
             )}
           >
-            {cat.label}
+            {showResolved ? '✓ 显示已结算' : '显示已结算'}
           </button>
-        ))}
-        <button
-          onClick={() => setShowResolved(!showResolved)}
-          className={cn(
-            'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors shrink-0 border',
-            showResolved ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-900 border-gray-700 text-gray-500 hover:text-gray-300'
-          )}
-        >
-          {showResolved ? '隐藏' : '显示'}已结算
-        </button>
+        </div>
       </div>
 
-      {/* Results count */}
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-gray-500">{filtered.length} 个市场</p>
+      {/* Featured section */}
+      {showFeatured && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Flame className="w-4 h-4 text-orange-400" />
+            <h2 className="text-sm font-semibold text-white">热门市场</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {featured.map(market => (
+              <MarketCard key={market.id} market={market} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* All markets */}
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-semibold text-white">
+          {category === 'All' ? '全部市场' : allCategories.find(c => c.value === category)?.label}
+          <span className="text-gray-500 font-normal ml-2">({filtered.length})</span>
+        </h2>
       </div>
 
-      {/* Market grid */}
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map(market => (
