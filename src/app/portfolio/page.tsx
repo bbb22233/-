@@ -238,11 +238,24 @@ function DepositModal({ open, onClose, user }: { open: boolean; onClose: () => v
 function WithdrawModal({ open, onClose, user }: { open: boolean; onClose: () => void; user: import('@/types').User | null }) {
   const [address, setAddress] = useState('')
   const [amount, setAmount] = useState('')
+  const [withdrawalPassword, setWithdrawalPassword] = useState('')
+  const [hasWithdrawalPassword, setHasWithdrawalPassword] = useState<boolean | null>(null)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const balance = user?.balance ?? 0
+
+  useEffect(() => {
+    if (open && user) {
+      fetch(`/api/user/${user.id}`)
+        .then(r => r.json())
+        .then((data: { hasWithdrawalPassword?: boolean }) => {
+          setHasWithdrawalPassword(!!data.hasWithdrawalPassword)
+        })
+        .catch(() => setHasWithdrawalPassword(false))
+    }
+  }, [open, user])
 
   const handleConfirm = async () => {
     if (!user) {
@@ -262,13 +275,22 @@ function WithdrawModal({ open, onClose, user }: { open: boolean; onClose: () => 
       setError('提现金额超过可用余额')
       return
     }
+    if (hasWithdrawalPassword && !withdrawalPassword.trim()) {
+      setError('请输入提款密码')
+      return
+    }
     setError('')
     setLoading(true)
     try {
       const res = await fetch('/api/withdraw', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, amount: parsedAmount, toAddress: address.trim() }),
+        body: JSON.stringify({
+          userId: user.id,
+          amount: parsedAmount,
+          toAddress: address.trim(),
+          ...(hasWithdrawalPassword ? { withdrawalPassword: withdrawalPassword.trim() } : {}),
+        }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -280,6 +302,7 @@ function WithdrawModal({ open, onClose, user }: { open: boolean; onClose: () => 
         setSuccess(false)
         setAddress('')
         setAmount('')
+        setWithdrawalPassword('')
         onClose()
       }, 3000)
     } catch {
@@ -339,6 +362,25 @@ function WithdrawModal({ open, onClose, user }: { open: boolean; onClose: () => 
             <span className="text-xs text-gray-500">可用余额</span>
             <span className="text-sm text-white font-semibold">{formatCurrency(balance)}</span>
           </div>
+
+          {/* Withdrawal password section */}
+          {hasWithdrawalPassword === true && (
+            <div>
+              <p className="text-xs text-gray-500 mb-2 font-medium">提款密码</p>
+              <Input
+                type="password"
+                placeholder="请输入提款密码"
+                value={withdrawalPassword}
+                onChange={e => setWithdrawalPassword(e.target.value)}
+              />
+            </div>
+          )}
+          {hasWithdrawalPassword === false && (
+            <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 px-4 py-2.5">
+              <p className="text-xs text-yellow-400">您尚未设置提款密码，建议前往个人资料页设置</p>
+            </div>
+          )}
+
           <div className="rounded-lg bg-yellow-500/5 border border-yellow-500/20 px-4 py-2.5">
             <p className="text-xs text-yellow-400/80">提现通常在 1-3 个工作日内处理，请确保地址正确。</p>
           </div>

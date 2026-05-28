@@ -4,7 +4,12 @@ import { prisma } from '@/lib/db/client'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { userId, amount, toAddress } = body as { userId: string; amount: number; toAddress: string }
+    const { userId, amount, toAddress, withdrawalPassword } = body as {
+      userId: string
+      amount: number
+      toAddress: string
+      withdrawalPassword?: string
+    }
 
     if (!userId || !toAddress || toAddress.trim() === '') {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -17,6 +22,14 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
+
+    // Verify withdrawal password if user has set one
+    if (user.withdrawalPassword) {
+      if (!withdrawalPassword || withdrawalPassword !== user.withdrawalPassword) {
+        return NextResponse.json({ error: '提款密码错误' }, { status: 401 })
+      }
+    }
+
     if (user.balance < amount) {
       return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 })
     }

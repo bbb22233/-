@@ -1,14 +1,21 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Shield, Plus, CheckCircle, XCircle, RefreshCw, Trash2, Globe, TrendingUp, Users, AlertTriangle, ChevronDown, ChevronUp, Loader2, Wallet } from 'lucide-react'
+import {
+  Shield, Plus, CheckCircle, XCircle, RefreshCw, Trash2, Globe,
+  TrendingUp, Users, AlertTriangle, Loader2, Wallet,
+  BarChart2, DollarSign, ArrowDownCircle, ArrowUpCircle,
+  Clock, CheckCircle2, MessageCircle, Search,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { formatVolume, formatDate, getCategoryColor } from '@/lib/utils'
+import { formatVolume, formatDate, getCategoryColor, formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
 const ADMIN_SECRET = 'admin123'
+
+type TabId = 'overview' | 'markets' | 'deposits' | 'users' | 'support'
 
 interface AdminMarket {
   id: string
@@ -47,25 +54,51 @@ interface WithdrawalRequestRow {
   user: { username: string; email: string }
 }
 
+interface AdminUser {
+  id: string
+  email: string
+  username: string
+  balance: number
+  totalPnl: number
+  marketsTraded: number
+  winRate: number
+  createdAt: string
+  isAdmin: boolean
+}
+
+interface AdminStats {
+  totalUsers: number
+  totalMarkets: number
+  activeMarkets: number
+  resolvedMarkets: number
+  totalVolume: number
+  totalFees: number
+  pendingDeposits: number
+  pendingWithdrawals: number
+  totalDeposited: number
+  totalWithdrawn: number
+}
+
 const categories = ['BTC', 'ETH', 'DeFi', 'Layer2', 'NFT', 'Regulation', 'Politics', 'Elections', 'Sports', 'Entertainment', 'AI', 'Tech', 'Economy', 'World']
 
 export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
+  const [activeTab, setActiveTab] = useState<TabId>('overview')
+
+  // --- Markets state ---
   const [markets, setMarkets] = useState<AdminMarket[]>([])
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<{ synced: number; errors: number } | null>(null)
-  const [activeTab, setActiveTab] = useState<'deposits' | 'markets' | 'create' | 'stats'>('deposits')
   const [settleModal, setSettleModal] = useState<AdminMarket | null>(null)
   const [statusFilter, setStatusFilter] = useState('all')
-
-  // Create form
   const [form, setForm] = useState({ title: '', description: '', category: 'BTC', endDate: '', liquidity: '100', tags: '' })
   const [creating, setCreating] = useState(false)
   const [createSuccess, setCreateSuccess] = useState(false)
+  const [showCreateForm, setShowCreateForm] = useState(false)
 
-  // Deposit/Withdrawal management
+  // --- Deposits/Withdrawals state ---
   const [depositAddress, setDepositAddress] = useState('')
   const [savingAddress, setSavingAddress] = useState(false)
   const [saveAddressMsg, setSaveAddressMsg] = useState('')
@@ -74,8 +107,26 @@ export default function AdminPage() {
   const [requestsLoading, setRequestsLoading] = useState(false)
   const [actionMsg, setActionMsg] = useState<Record<string, string>>({})
 
+  // --- Stats state ---
+  const [stats, setStats] = useState<AdminStats | null>(null)
+  const [statsLoading, setStatsLoading] = useState(false)
+
+  // --- Users state ---
+  const [users, setUsers] = useState<AdminUser[]>([])
+  const [usersLoading, setUsersLoading] = useState(false)
+  const [userSearch, setUserSearch] = useState('')
+  const [editingBalance, setEditingBalance] = useState<Record<string, string>>({})
+  const [savingBalance, setSavingBalance] = useState<Record<string, boolean>>({})
+  const [balanceChanged, setBalanceChanged] = useState<Record<string, boolean>>({})
+
+  // --- Support settings state ---
+  const [supportSettings, setSupportSettings] = useState<Record<string, string>>({})
+  const [savingSupport, setSavingSupport] = useState<Record<string, boolean>>({})
+  const [savedSupport, setSavedSupport] = useState<Record<string, boolean>>({})
+
   const headers = { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET }
 
+  // ---- Loaders ----
   const loadMarkets = useCallback(async () => {
     setLoading(true)
     try {
@@ -92,6 +143,12 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/settings')
       const data: Record<string, string> = await res.json()
       if (data.depositAddress) setDepositAddress(data.depositAddress)
+      setSupportSettings({
+        supportWhatsapp: data.supportWhatsapp ?? '',
+        supportTelegram: data.supportTelegram ?? '',
+        supportDiscord: data.supportDiscord ?? '',
+        supportWechat: data.supportWechat ?? '',
+      })
     } catch { /* ignore */ }
   }, [])
 
@@ -107,13 +164,43 @@ export default function AdminPage() {
     }
   }, [])
 
+  const loadStats = useCallback(async () => {
+    setStatsLoading(true)
+    try {
+      const res = await fetch('/api/admin/stats', { headers })
+      const data = await res.json()
+      setStats(data)
+    } finally {
+      setStatsLoading(false)
+    }
+  }, [])
+
+  const loadUsers = useCallback(async (search = '') => {
+    setUsersLoading(true)
+    try {
+      const url = search ? `/api/admin/users?search=${encodeURIComponent(search)}` : '/api/admin/users'
+      const res = await fetch(url, { headers })
+      const data = await res.json()
+      if (Array.isArray(data)) setUsers(data)
+    } finally {
+      setUsersLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (authenticated) {
       loadMarkets()
       loadSettings()
       loadPendingRequests()
+      loadStats()
+      loadUsers()
     }
-  }, [authenticated, loadMarkets, loadSettings, loadPendingRequests])
+  }, [authenticated, loadMarkets, loadSettings, loadPendingRequests, loadStats, loadUsers])
+
+  // ---- Handlers ----
+  const handleLogin = () => {
+    if (password === ADMIN_SECRET) setAuthenticated(true)
+  }
 
   const handleSaveAddress = async () => {
     setSavingAddress(true)
@@ -124,11 +211,7 @@ export default function AdminPage() {
         headers,
         body: JSON.stringify({ key: 'depositAddress', value: depositAddress }),
       })
-      if (res.ok) {
-        setSaveAddressMsg('保存成功')
-      } else {
-        setSaveAddressMsg('保存失败')
-      }
+      setSaveAddressMsg(res.ok ? '保存成功' : '保存失败')
     } catch {
       setSaveAddressMsg('网络错误')
     } finally {
@@ -155,10 +238,6 @@ export default function AdminPage() {
       setActionMsg(prev => ({ ...prev, [id]: '网络错误' }))
     }
     setTimeout(() => setActionMsg(prev => { const n = { ...prev }; delete n[id]; return n }), 3000)
-  }
-
-  const handleLogin = () => {
-    if (password === ADMIN_SECRET) setAuthenticated(true)
   }
 
   const handleSettle = async (outcome: 'yes' | 'no') => {
@@ -211,16 +290,48 @@ export default function AdminPage() {
     }
   }
 
-  const filteredMarkets = statusFilter === 'all' ? markets : markets.filter(m => m.status === statusFilter)
-
-  const stats = {
-    total: markets.length,
-    active: markets.filter(m => m.status === 'active').length,
-    resolved: markets.filter(m => m.status === 'resolved').length,
-    fromPolymarket: markets.filter(m => m.polymarketId).length,
-    totalVolume: markets.reduce((s, m) => s + m.volume, 0),
+  const handleSaveBalance = async (userId: string) => {
+    const newBalance = parseFloat(editingBalance[userId] ?? '')
+    if (isNaN(newBalance)) return
+    setSavingBalance(prev => ({ ...prev, [userId]: true }))
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ balance: newBalance }),
+      })
+      if (res.ok) {
+        const updated: AdminUser = await res.json()
+        setUsers(prev => prev.map(u => u.id === userId ? updated : u))
+        setEditingBalance(prev => { const n = { ...prev }; delete n[userId]; return n })
+        setBalanceChanged(prev => ({ ...prev, [userId]: true }))
+        setTimeout(() => setBalanceChanged(prev => { const n = { ...prev }; delete n[userId]; return n }), 3000)
+      }
+    } finally {
+      setSavingBalance(prev => { const n = { ...prev }; delete n[userId]; return n })
+    }
   }
 
+  const handleSaveSupport = async (key: string) => {
+    setSavingSupport(prev => ({ ...prev, [key]: true }))
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ key, value: supportSettings[key] ?? '' }),
+      })
+      if (res.ok) {
+        setSavedSupport(prev => ({ ...prev, [key]: true }))
+        setTimeout(() => setSavedSupport(prev => { const n = { ...prev }; delete n[key]; return n }), 3000)
+      }
+    } finally {
+      setSavingSupport(prev => { const n = { ...prev }; delete n[key]; return n })
+    }
+  }
+
+  const filteredMarkets = statusFilter === 'all' ? markets : markets.filter(m => m.status === statusFilter)
+
+  // ---- Login screen ----
   if (!authenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-950">
@@ -248,8 +359,9 @@ export default function AdminPage() {
     )
   }
 
+  // ---- Main panel ----
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
@@ -261,53 +373,264 @@ export default function AdminPage() {
             <p className="text-xs text-gray-500">CryptoPredict Admin Panel</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={loadMarkets} disabled={loading}>
-            <RefreshCw className={cn('w-3.5 h-3.5 mr-1.5', loading && 'animate-spin')} />
-            刷新
-          </Button>
-          <Button size="sm" onClick={handleSync} disabled={syncing} className="bg-purple-600 hover:bg-purple-700">
-            {syncing ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Globe className="w-3.5 h-3.5 mr-1.5" />}
-            同步 Polymarket
-          </Button>
-        </div>
       </div>
 
-      {/* Sync result */}
-      {syncResult && (
-        <div className={cn('rounded-xl border p-4 mb-6 flex items-center gap-3', syncResult.errors === 0 ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-yellow-500/30 bg-yellow-500/5')}>
-          {syncResult.errors === 0 ? <CheckCircle className="w-5 h-5 text-emerald-400" /> : <AlertTriangle className="w-5 h-5 text-yellow-400" />}
-          <p className="text-sm text-white">同步完成：新增/更新 <span className="text-emerald-400 font-bold">{syncResult.synced}</span> 个市场，失败 <span className="text-red-400">{syncResult.errors}</span> 个</p>
-        </div>
-      )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
-        {[
-          { label: '市场总数', value: stats.total, color: 'text-white' },
-          { label: '活跃中', value: stats.active, color: 'text-emerald-400' },
-          { label: '已结算', value: stats.resolved, color: 'text-gray-400' },
-          { label: '来自Polymarket', value: stats.fromPolymarket, color: 'text-purple-400' },
-          { label: '总交易量', value: formatVolume(stats.totalVolume), color: 'text-blue-400' },
-        ].map(s => (
-          <div key={s.label} className="rounded-xl border border-gray-800 bg-gray-900 p-4 text-center">
-            <p className={cn('text-xl font-bold', s.color)}>{s.value}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-800 mb-6">
-        {(['deposits', 'markets', 'create', 'stats'] as const).map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className={cn('px-4 py-2.5 text-sm font-medium transition-colors border-b-2', activeTab === tab ? 'text-white border-blue-500' : 'text-gray-500 border-transparent hover:text-gray-300')}>
-            {tab === 'deposits' ? `充提管理 (${pendingDeposits.length + pendingWithdrawals.length})` : tab === 'markets' ? `市场管理 (${filteredMarkets.length})` : tab === 'create' ? '创建市场' : '数据统计'}
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-8 flex-wrap">
+        {(
+          [
+            { id: 'overview', label: '概览' },
+            { id: 'markets', label: '市场管理' },
+            { id: 'deposits', label: `充提审核 (${pendingDeposits.length + pendingWithdrawals.length})` },
+            { id: 'users', label: '用户管理' },
+            { id: 'support', label: '客服设置' },
+          ] as { id: TabId; label: string }[]
+        ).map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+              activeTab === tab.id
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            )}
+          >
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Deposits management tab */}
+      {/* ====== Tab: 概览 ====== */}
+      {activeTab === 'overview' && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-white">平台概览</h2>
+            <Button variant="outline" size="sm" onClick={loadStats} disabled={statsLoading}>
+              <RefreshCw className={cn('w-3.5 h-3.5 mr-1.5', statsLoading && 'animate-spin')} />
+              刷新
+            </Button>
+          </div>
+          {statsLoading || !stats ? (
+            <div className="flex items-center justify-center h-40">
+              <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Row 1 */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-4 h-4 text-blue-400" />
+                    <span className="text-xs text-gray-500">总用户数</span>
+                  </div>
+                  <p className="text-2xl font-bold text-white">{stats.totalUsers}</p>
+                </div>
+                <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <BarChart2 className="w-4 h-4 text-emerald-400" />
+                    <span className="text-xs text-gray-500">活跃市场</span>
+                  </div>
+                  <p className="text-2xl font-bold text-emerald-400">{stats.activeMarkets}</p>
+                </div>
+                <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="w-4 h-4 text-purple-400" />
+                    <span className="text-xs text-gray-500">总交易量</span>
+                  </div>
+                  <p className="text-2xl font-bold text-purple-400">{formatCurrency(stats.totalVolume)}</p>
+                </div>
+                <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <DollarSign className="w-4 h-4 text-yellow-400" />
+                    <span className="text-xs text-gray-500">平台手续费</span>
+                  </div>
+                  <p className="text-2xl font-bold text-yellow-400">{formatCurrency(stats.totalFees)}</p>
+                </div>
+              </div>
+              {/* Row 2 */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ArrowDownCircle className="w-4 h-4 text-emerald-400" />
+                    <span className="text-xs text-gray-500">累计充值</span>
+                  </div>
+                  <p className="text-2xl font-bold text-emerald-400">{formatCurrency(stats.totalDeposited)}</p>
+                </div>
+                <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ArrowUpCircle className="w-4 h-4 text-red-400" />
+                    <span className="text-xs text-gray-500">累计提款</span>
+                  </div>
+                  <p className="text-2xl font-bold text-red-400">{formatCurrency(stats.totalWithdrawn)}</p>
+                </div>
+                <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="w-4 h-4 text-orange-400" />
+                    <span className="text-xs text-gray-500">待审核充值</span>
+                  </div>
+                  <p className="text-2xl font-bold text-orange-400">{stats.pendingDeposits}</p>
+                </div>
+                <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="w-4 h-4 text-orange-400" />
+                    <span className="text-xs text-gray-500">待审核提款</span>
+                  </div>
+                  <p className="text-2xl font-bold text-orange-400">{stats.pendingWithdrawals}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ====== Tab: 市场管理 ====== */}
+      {activeTab === 'markets' && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex gap-2 flex-wrap">
+              {['all', 'active', 'pending', 'resolved'].map(s => (
+                <button key={s} onClick={() => setStatusFilter(s)}
+                  className={cn('px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
+                    statusFilter === s ? 'bg-blue-600 text-white' : 'bg-gray-900 border border-gray-800 text-gray-400 hover:text-white')}>
+                  {s === 'all' ? '全部' : s === 'active' ? '活跃' : s === 'pending' ? '待审核' : '已结算'}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={loadMarkets} disabled={loading}>
+                <RefreshCw className={cn('w-3.5 h-3.5 mr-1.5', loading && 'animate-spin')} />
+                刷新
+              </Button>
+              <Button size="sm" onClick={handleSync} disabled={syncing} className="bg-purple-600 hover:bg-purple-700">
+                {syncing ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Globe className="w-3.5 h-3.5 mr-1.5" />}
+                同步 Polymarket
+              </Button>
+              <Button size="sm" onClick={() => setShowCreateForm(v => !v)}>
+                <Plus className="w-3.5 h-3.5 mr-1.5" />
+                创建市场
+              </Button>
+            </div>
+          </div>
+
+          {syncResult && (
+            <div className={cn('rounded-xl border p-4 mb-4 flex items-center gap-3',
+              syncResult.errors === 0 ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-yellow-500/30 bg-yellow-500/5')}>
+              {syncResult.errors === 0 ? <CheckCircle className="w-5 h-5 text-emerald-400" /> : <AlertTriangle className="w-5 h-5 text-yellow-400" />}
+              <p className="text-sm text-white">同步完成：新增/更新 <span className="text-emerald-400 font-bold">{syncResult.synced}</span> 个市场，失败 <span className="text-red-400">{syncResult.errors}</span> 个</p>
+            </div>
+          )}
+
+          {showCreateForm && (
+            <div className="rounded-xl border border-gray-800 bg-gray-900 p-6 mb-6 space-y-4">
+              <h2 className="text-base font-semibold text-white">手动创建市场</h2>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">市场问题 *</label>
+                <Input placeholder="会发生...吗？" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">详细描述 *</label>
+                <textarea className="w-full h-24 px-3 py-2 rounded-lg border border-gray-700 bg-gray-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  placeholder="结算条件、数据来源..."
+                  value={form.description}
+                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">分类 *</label>
+                  <select className="w-full h-10 px-3 rounded-lg border border-gray-700 bg-gray-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">截止日期 *</label>
+                  <Input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} min={new Date().toISOString().split('T')[0]} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">初始流动性 (USDC)</label>
+                  <Input type="number" value={form.liquidity} onChange={e => setForm(f => ({ ...f, liquidity: e.target.value }))} min={10} />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">标签 (逗号分隔)</label>
+                  <Input placeholder="Tag1, Tag2" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} />
+                </div>
+              </div>
+              {createSuccess && (
+                <div className="flex items-center gap-2 text-emerald-400 text-sm">
+                  <CheckCircle className="w-4 h-4" /> 市场创建成功！
+                </div>
+              )}
+              <Button onClick={handleCreate} disabled={creating} className="w-full">
+                {creating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />创建中...</> : <><Plus className="w-4 h-4 mr-2" />创建市场</>}
+              </Button>
+            </div>
+          )}
+
+          <div className="rounded-xl border border-gray-800 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-800 bg-gray-900/60">
+                  <th className="text-left px-4 py-3 text-xs text-gray-500">市场</th>
+                  <th className="text-left px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">分类</th>
+                  <th className="text-center px-4 py-3 text-xs text-gray-500 hidden sm:table-cell">状态</th>
+                  <th className="text-right px-4 py-3 text-xs text-gray-500 hidden md:table-cell">YES/NO</th>
+                  <th className="text-right px-4 py-3 text-xs text-gray-500 hidden md:table-cell">交易量</th>
+                  <th className="text-right px-4 py-3 text-xs text-gray-500">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredMarkets.map((market, i) => (
+                  <tr key={market.id} className={cn('border-b border-gray-800/50 hover:bg-gray-800/30', i === filteredMarkets.length - 1 && 'border-0')}>
+                    <td className="px-4 py-3.5 max-w-xs">
+                      <div className="flex items-start gap-2">
+                        {market.polymarketId && <Globe className="w-3 h-3 text-purple-400 mt-0.5 shrink-0" />}
+                        <p className="text-sm text-white line-clamp-2">{market.title}</p>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5 hidden lg:table-cell">
+                      <span className={cn('px-2 py-0.5 rounded-md text-xs', getCategoryColor(market.category))}>{market.category}</span>
+                    </td>
+                    <td className="px-4 py-3.5 text-center hidden sm:table-cell">
+                      <Badge variant={market.status === 'active' ? 'success' : market.status === 'resolved' ? 'secondary' : 'warning'}>
+                        {market.status === 'active' ? '活跃' : market.status === 'resolved' ? '已结算' : '待审核'}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3.5 text-right hidden md:table-cell">
+                      <span className="text-emerald-400 text-xs">{Math.round(market.yesPrice * 100)}%</span>
+                      <span className="text-gray-600 mx-1">/</span>
+                      <span className="text-red-400 text-xs">{Math.round(market.noPrice * 100)}%</span>
+                    </td>
+                    <td className="px-4 py-3.5 text-right text-xs text-gray-400 hidden md:table-cell">{formatVolume(market.volume)}</td>
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center justify-end gap-1">
+                        {market.status === 'active' && (
+                          <button onClick={() => setSettleModal(market)}
+                            className="px-2 py-1 rounded text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 transition-colors whitespace-nowrap">
+                            结算
+                          </button>
+                        )}
+                        {market.status === 'resolved' && (
+                          <span className={cn('text-xs font-medium', market.resolvedOutcome === 'yes' ? 'text-emerald-400' : 'text-red-400')}>
+                            {market.resolvedOutcome?.toUpperCase()}
+                          </span>
+                        )}
+                        <button onClick={() => handleDelete(market.id)} className="p-1 text-gray-600 hover:text-red-400 transition-colors">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ====== Tab: 充提审核 ====== */}
       {activeTab === 'deposits' && (
         <div className="space-y-8">
           {/* Deposit address setting */}
@@ -375,16 +698,12 @@ export default function AdminPage() {
                               <span className="text-xs text-gray-400">{actionMsg[req.id]}</span>
                             ) : (
                               <>
-                                <button
-                                  onClick={() => handleRequestAction(req.id, 'deposit', 'approve')}
-                                  className="px-2 py-1 rounded text-xs bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 transition-colors"
-                                >
+                                <button onClick={() => handleRequestAction(req.id, 'deposit', 'approve')}
+                                  className="px-2 py-1 rounded text-xs bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 transition-colors">
                                   批准
                                 </button>
-                                <button
-                                  onClick={() => handleRequestAction(req.id, 'deposit', 'reject')}
-                                  className="px-2 py-1 rounded text-xs bg-red-600/20 text-red-400 hover:bg-red-600/40 transition-colors"
-                                >
+                                <button onClick={() => handleRequestAction(req.id, 'deposit', 'reject')}
+                                  className="px-2 py-1 rounded text-xs bg-red-600/20 text-red-400 hover:bg-red-600/40 transition-colors">
                                   拒绝
                                 </button>
                               </>
@@ -436,16 +755,12 @@ export default function AdminPage() {
                               <span className="text-xs text-gray-400">{actionMsg[req.id]}</span>
                             ) : (
                               <>
-                                <button
-                                  onClick={() => handleRequestAction(req.id, 'withdrawal', 'approve')}
-                                  className="px-2 py-1 rounded text-xs bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 transition-colors"
-                                >
+                                <button onClick={() => handleRequestAction(req.id, 'withdrawal', 'approve')}
+                                  className="px-2 py-1 rounded text-xs bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 transition-colors">
                                   批准
                                 </button>
-                                <button
-                                  onClick={() => handleRequestAction(req.id, 'withdrawal', 'reject')}
-                                  className="px-2 py-1 rounded text-xs bg-red-600/20 text-red-400 hover:bg-red-600/40 transition-colors"
-                                >
+                                <button onClick={() => handleRequestAction(req.id, 'withdrawal', 'reject')}
+                                  className="px-2 py-1 rounded text-xs bg-red-600/20 text-red-400 hover:bg-red-600/40 transition-colors">
                                   拒绝
                                 </button>
                               </>
@@ -462,172 +777,159 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Markets tab */}
-      {activeTab === 'markets' && (
+      {/* ====== Tab: 用户管理 ====== */}
+      {activeTab === 'users' && (
         <div>
-          {/* Status filter */}
-          <div className="flex gap-2 mb-4">
-            {['all', 'active', 'pending', 'resolved'].map(s => (
-              <button key={s} onClick={() => setStatusFilter(s)}
-                className={cn('px-3 py-1.5 rounded-full text-xs font-medium transition-colors', statusFilter === s ? 'bg-blue-600 text-white' : 'bg-gray-900 border border-gray-800 text-gray-400 hover:text-white')}>
-                {s === 'all' ? '全部' : s === 'active' ? '活跃' : s === 'pending' ? '待审核' : '已结算'}
-              </button>
-            ))}
-          </div>
-
-          <div className="rounded-xl border border-gray-800 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-800 bg-gray-900/60">
-                  <th className="text-left px-4 py-3 text-xs text-gray-500">市场</th>
-                  <th className="text-left px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">分类</th>
-                  <th className="text-center px-4 py-3 text-xs text-gray-500 hidden sm:table-cell">状态</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500 hidden md:table-cell">YES/NO</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500 hidden md:table-cell">交易量</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredMarkets.map((market, i) => (
-                  <tr key={market.id} className={cn('border-b border-gray-800/50 hover:bg-gray-800/30', i === filteredMarkets.length - 1 && 'border-0')}>
-                    <td className="px-4 py-3.5 max-w-xs">
-                      <div className="flex items-start gap-2">
-                        {market.polymarketId && <Globe className="w-3 h-3 text-purple-400 mt-0.5 shrink-0" />}
-                        <p className="text-sm text-white line-clamp-2">{market.title}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5 hidden lg:table-cell">
-                      <span className={cn('px-2 py-0.5 rounded-md text-xs', getCategoryColor(market.category))}>{market.category}</span>
-                    </td>
-                    <td className="px-4 py-3.5 text-center hidden sm:table-cell">
-                      <Badge variant={market.status === 'active' ? 'success' : market.status === 'resolved' ? 'secondary' : 'warning'}>
-                        {market.status === 'active' ? '活跃' : market.status === 'resolved' ? '已结算' : '待审核'}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3.5 text-right hidden md:table-cell">
-                      <span className="text-emerald-400 text-xs">{Math.round(market.yesPrice * 100)}%</span>
-                      <span className="text-gray-600 mx-1">/</span>
-                      <span className="text-red-400 text-xs">{Math.round(market.noPrice * 100)}%</span>
-                    </td>
-                    <td className="px-4 py-3.5 text-right text-xs text-gray-400 hidden md:table-cell">{formatVolume(market.volume)}</td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center justify-end gap-1">
-                        {market.status === 'active' && (
-                          <button onClick={() => setSettleModal(market)}
-                            className="px-2 py-1 rounded text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 transition-colors whitespace-nowrap">
-                            结算
-                          </button>
-                        )}
-                        {market.status === 'resolved' && (
-                          <span className={cn('text-xs font-medium', market.resolvedOutcome === 'yes' ? 'text-emerald-400' : 'text-red-400')}>
-                            {market.resolvedOutcome?.toUpperCase()}
-                          </span>
-                        )}
-                        <button onClick={() => handleDelete(market.id)} className="p-1 text-gray-600 hover:text-red-400 transition-colors">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Create tab */}
-      {activeTab === 'create' && (
-        <div className="max-w-2xl">
-          <div className="rounded-xl border border-gray-800 bg-gray-900 p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-white">手动创建市场</h2>
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">市场问题 *</label>
-              <Input placeholder="会发生...吗？" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+          <div className="flex items-center gap-3 mb-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Input
+                placeholder="搜索邮箱或用户名..."
+                value={userSearch}
+                onChange={e => {
+                  setUserSearch(e.target.value)
+                  loadUsers(e.target.value)
+                }}
+                className="pl-9"
+              />
             </div>
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">详细描述 *</label>
-              <textarea className="w-full h-24 px-3 py-2 rounded-lg border border-gray-700 bg-gray-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                placeholder="结算条件、数据来源..."
-                value={form.description}
-                onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">分类 *</label>
-                <select className="w-full h-10 px-3 rounded-lg border border-gray-700 bg-gray-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
-                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">截止日期 *</label>
-                <Input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} min={new Date().toISOString().split('T')[0]} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">初始流动性 (USDC)</label>
-                <Input type="number" value={form.liquidity} onChange={e => setForm(f => ({ ...f, liquidity: e.target.value }))} min={10} />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">标签 (逗号分隔)</label>
-                <Input placeholder="Tag1, Tag2" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} />
-              </div>
-            </div>
-            {createSuccess && (
-              <div className="flex items-center gap-2 text-emerald-400 text-sm">
-                <CheckCircle className="w-4 h-4" /> 市场创建成功！
-              </div>
-            )}
-            <Button onClick={handleCreate} disabled={creating} className="w-full">
-              {creating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />创建中...</> : <><Plus className="w-4 h-4 mr-2" />创建市场</>}
+            <Button variant="outline" size="sm" onClick={() => loadUsers(userSearch)} disabled={usersLoading}>
+              <RefreshCw className={cn('w-3.5 h-3.5 mr-1.5', usersLoading && 'animate-spin')} />
+              刷新
             </Button>
           </div>
+
+          {usersLoading ? (
+            <div className="flex items-center justify-center h-40">
+              <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
+            </div>
+          ) : (
+            <div className="rounded-xl border border-gray-800 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-800 bg-gray-900/60">
+                    <th className="text-left px-4 py-3 text-xs text-gray-500">用户名</th>
+                    <th className="text-left px-4 py-3 text-xs text-gray-500 hidden md:table-cell">邮箱</th>
+                    <th className="text-right px-4 py-3 text-xs text-gray-500">余额</th>
+                    <th className="text-right px-4 py-3 text-xs text-gray-500 hidden sm:table-cell">盈亏</th>
+                    <th className="text-right px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">交易数</th>
+                    <th className="text-left px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">注册时间</th>
+                    <th className="text-right px-4 py-3 text-xs text-gray-500">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user, i) => (
+                    <tr key={user.id} className={cn('border-b border-gray-800/50 hover:bg-gray-800/30', i === users.length - 1 && 'border-0')}>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-white font-medium">{user.username}</p>
+                          {user.isAdmin && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-600/20 text-red-400">Admin</span>}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 text-xs text-gray-400 hidden md:table-cell">{user.email}</td>
+                      <td className="px-4 py-3.5 text-right">
+                        <span className={cn('text-sm font-semibold', balanceChanged[user.id] ? 'text-green-400' : 'text-white')}>
+                          {formatCurrency(user.balance)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-right hidden sm:table-cell">
+                        <span className={cn('text-xs', user.totalPnl >= 0 ? 'text-emerald-400' : 'text-red-400')}>
+                          {user.totalPnl >= 0 ? '+' : ''}{formatCurrency(user.totalPnl)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-right text-xs text-gray-400 hidden lg:table-cell">{user.marketsTraded}</td>
+                      <td className="px-4 py-3.5 text-xs text-gray-500 hidden lg:table-cell">{formatDate(user.createdAt)}</td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center justify-end gap-1">
+                          {editingBalance[user.id] !== undefined ? (
+                            <>
+                              <Input
+                                type="number"
+                                value={editingBalance[user.id]}
+                                onChange={e => setEditingBalance(prev => ({ ...prev, [user.id]: e.target.value }))}
+                                className="w-24 h-7 text-xs px-2"
+                              />
+                              <button
+                                onClick={() => handleSaveBalance(user.id)}
+                                disabled={savingBalance[user.id]}
+                                className="px-2 py-1 rounded text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 transition-colors"
+                              >
+                                {savingBalance[user.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : '保存'}
+                              </button>
+                              <button
+                                onClick={() => setEditingBalance(prev => { const n = { ...prev }; delete n[user.id]; return n })}
+                                className="px-2 py-1 rounded text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                              >
+                                取消
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => setEditingBalance(prev => ({ ...prev, [user.id]: String(user.balance) }))}
+                              className="px-2 py-1 rounded text-xs bg-gray-800 text-gray-400 hover:text-white transition-colors"
+                            >
+                              调整余额
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {users.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">暂无用户</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Stats tab */}
-      {activeTab === 'stats' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
-            <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-blue-400" />分类分布
-            </h3>
-            <div className="space-y-2">
-              {categories.map(cat => {
-                const count = markets.filter(m => m.category === cat).length
-                if (!count) return null
-                return (
-                  <div key={cat} className="flex items-center gap-3">
-                    <span className={cn('text-xs w-24 shrink-0', getCategoryColor(cat).split(' ')[0])}>{cat}</span>
-                    <div className="flex-1 h-1.5 rounded-full bg-gray-800">
-                      <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(count / markets.length) * 100}%` }} />
-                    </div>
-                    <span className="text-xs text-gray-400 w-4 text-right">{count}</span>
-                  </div>
-                )
-              })}
-            </div>
+      {/* ====== Tab: 客服设置 ====== */}
+      {activeTab === 'support' && (
+        <div className="max-w-2xl">
+          <div className="mb-6">
+            <h2 className="text-base font-semibold text-white">客服渠道设置</h2>
+            <p className="text-xs text-gray-500 mt-1">配置后用户可在个人资料页看到客服入口</p>
           </div>
-          <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
-            <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <Users className="w-4 h-4 text-purple-400" />数据来源
-            </h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-400">手动创建</span>
-                <span className="text-white font-medium">{markets.length - stats.fromPolymarket}</span>
+          <div className="rounded-xl border border-gray-800 bg-gray-900 divide-y divide-gray-800">
+            {[
+              { key: 'supportWhatsapp', label: 'WhatsApp', iconColor: 'text-green-400', bgColor: 'bg-green-400/10' },
+              { key: 'supportTelegram', label: 'Telegram', iconColor: 'text-blue-400', bgColor: 'bg-blue-400/10' },
+              { key: 'supportDiscord', label: 'Discord', iconColor: 'text-indigo-400', bgColor: 'bg-indigo-400/10' },
+              { key: 'supportWechat', label: '微信客服二维码链接', iconColor: 'text-green-400', bgColor: 'bg-green-400/10' },
+            ].map(({ key, label, iconColor, bgColor }) => (
+              <div key={key} className="p-5 flex items-center gap-4">
+                <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0', bgColor)}>
+                  <MessageCircle className={cn('w-4 h-4', iconColor)} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white mb-1.5">{label}</p>
+                  <Input
+                    placeholder={`输入 ${label} 链接或地址`}
+                    value={supportSettings[key] ?? ''}
+                    onChange={e => setSupportSettings(prev => ({ ...prev, [key]: e.target.value }))}
+                  />
+                </div>
+                <button
+                  onClick={() => handleSaveSupport(key)}
+                  disabled={savingSupport[key]}
+                  className="shrink-0 px-3 py-2 rounded-lg text-sm font-medium bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 transition-colors disabled:opacity-50"
+                >
+                  {savingSupport[key] ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : savedSupport[key] ? (
+                    <span className="flex items-center gap-1 text-emerald-400">
+                      <CheckCircle2 className="w-4 h-4" />已保存
+                    </span>
+                  ) : (
+                    '保存'
+                  )}
+                </button>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-400">来自 Polymarket</span>
-                <span className="text-purple-400 font-medium">{stats.fromPolymarket}</span>
-              </div>
-              <div className="border-t border-gray-800 pt-3 flex justify-between items-center">
-                <span className="text-sm text-gray-300 font-medium">总计</span>
-                <span className="text-white font-bold">{markets.length}</span>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       )}

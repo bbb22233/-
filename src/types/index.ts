@@ -68,6 +68,7 @@ export interface User {
   winRate: number
   marketsTraded: number
   joinedAt: string
+  withdrawalPassword?: string
 }
 
 export interface LeaderboardEntry {
