@@ -1,61 +1,94 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { Search, TrendingUp, Flame, Zap } from 'lucide-react'
+import Link from 'next/link'
+import { Search, Zap, Flame } from 'lucide-react'
 import { MarketCard } from '@/components/markets/MarketCard'
 import { useMarkets } from '@/hooks/useMarkets'
-import { MarketCategory } from '@/types'
-import { cn } from '@/lib/utils'
-
-type CategoryOption = { label: string; value: MarketCategory | 'All' }
-
-const categoryGroups: { label: string; items: CategoryOption[] }[] = [
-  {
-    label: '加密货币',
-    items: [
-      { label: '全部', value: 'All' },
-      { label: '₿ BTC', value: 'BTC' },
-      { label: 'Ξ ETH', value: 'ETH' },
-      { label: 'DeFi', value: 'DeFi' },
-      { label: 'Layer2', value: 'Layer2' },
-      { label: 'NFT', value: 'NFT' },
-      { label: '监管', value: 'Regulation' },
-    ],
-  },
-  {
-    label: '时事',
-    items: [
-      { label: '🗳 政治', value: 'Politics' },
-      { label: '🗳 选举', value: 'Elections' },
-      { label: '🌍 世界', value: 'World' },
-      { label: '📈 经济', value: 'Economy' },
-    ],
-  },
-  {
-    label: '科技娱乐',
-    items: [
-      { label: '🤖 AI', value: 'AI' },
-      { label: '💻 科技', value: 'Tech' },
-      { label: '⚽ 体育', value: 'Sports' },
-      { label: '🎬 娱乐', value: 'Entertainment' },
-    ],
-  },
-]
-
-const allCategories: CategoryOption[] = categoryGroups.flatMap(g => g.items)
+import { MarketCategory, Market } from '@/types'
+import { cn, formatVolume } from '@/lib/utils'
 
 type SortType = 'volume' | 'newest' | 'ending'
 
+type CategoryOption = {
+  label: string
+  value: MarketCategory | 'All' | '__hot__' | '__breaking__' | '__new__'
+  sort?: SortType
+}
+
+const categoryPills: CategoryOption[] = [
+  { label: '热门', value: '__hot__', sort: 'volume' },
+  { label: '突发', value: '__breaking__', sort: 'newest' },
+  { label: '最新', value: '__new__', sort: 'newest' },
+  { label: '全部', value: 'All' },
+  { label: 'BTC', value: 'BTC' },
+  { label: 'ETH', value: 'ETH' },
+  { label: 'DeFi', value: 'DeFi' },
+  { label: '政治', value: 'Politics' },
+  { label: '选举', value: 'Elections' },
+  { label: '体育', value: 'Sports' },
+  { label: 'AI', value: 'AI' },
+  { label: '科技', value: 'Tech' },
+  { label: '娱乐', value: 'Entertainment' },
+  { label: '世界', value: 'World' },
+  { label: '经济', value: 'Economy' },
+  { label: '监管', value: 'Regulation' },
+]
+
+const SPECIAL_VALUES = new Set(['__hot__', '__breaking__', '__new__'])
+
+function isMarketCategory(v: string): v is MarketCategory | 'All' {
+  return !SPECIAL_VALUES.has(v)
+}
+
 function MarketCardSkeleton() {
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900 p-4 animate-pulse">
-      <div className="h-4 bg-gray-800 rounded w-3/4 mb-3" />
-      <div className="h-3 bg-gray-800 rounded w-1/2 mb-4" />
-      <div className="h-2 bg-gray-800 rounded-full mb-3" />
-      <div className="flex justify-between">
-        <div className="h-3 bg-gray-800 rounded w-1/4" />
-        <div className="h-3 bg-gray-800 rounded w-1/4" />
+    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 animate-pulse">
+      <div className="flex gap-3 mb-3">
+        <div className="w-12 h-12 bg-gray-800 rounded-xl shrink-0" />
+        <div className="flex-1">
+          <div className="h-4 bg-gray-800 rounded w-3/4 mb-2" />
+          <div className="h-3 bg-gray-800 rounded w-1/2" />
+        </div>
       </div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="h-8 bg-gray-800 rounded w-16" />
+        <div className="flex gap-2">
+          <div className="h-7 bg-gray-800 rounded-full w-16" />
+          <div className="h-7 bg-gray-800 rounded-full w-16" />
+        </div>
+      </div>
+      <div className="flex justify-between pt-2 border-t border-gray-800/60">
+        <div className="h-3 bg-gray-800 rounded w-1/3" />
+        <div className="h-3 bg-gray-800 rounded w-4" />
+      </div>
+    </div>
+  )
+}
+
+function TrendingSidebar({ markets }: { markets: Market[] }) {
+  const top5 = markets.filter(m => m.status === 'active').slice(0, 5)
+  return (
+    <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 sticky top-20">
+      <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+        <Zap className="w-4 h-4 text-yellow-400" /> 热门市场
+      </h3>
+      {top5.map((m, i) => (
+        <Link
+          key={m.id}
+          href={`/markets/${m.id}`}
+          className="flex items-start gap-3 py-2.5 border-b border-gray-800/60 last:border-0 hover:bg-gray-800/30 -mx-4 px-4 transition-colors"
+        >
+          <span className="text-xs text-gray-600 w-4 shrink-0 mt-0.5">{i + 1}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-white font-medium line-clamp-2 leading-snug">{m.title}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{formatVolume(m.volume)}</p>
+          </div>
+          <span className="text-sm font-bold text-emerald-400 shrink-0">
+            {Math.round(m.yesPrice * 100)}%
+          </span>
+        </Link>
+      ))}
     </div>
   )
 }
@@ -63,11 +96,17 @@ function MarketCardSkeleton() {
 export default function HomePage() {
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
-  const [category, setCategory] = useState<MarketCategory | 'All'>('All')
+  const [activePill, setActivePill] = useState<string>('__hot__')
   const [sort, setSort] = useState<SortType>('volume')
   const [showResolved, setShowResolved] = useState(false)
 
-  // Debounce search: wait 300ms after user stops typing before fetching
+  // Derive category from active pill
+  const category: MarketCategory | 'All' = useMemo(() => {
+    if (isMarketCategory(activePill)) return activePill as MarketCategory | 'All'
+    return 'All'
+  }, [activePill])
+
+  // Debounce search
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 300)
     return () => clearTimeout(t)
@@ -75,64 +114,87 @@ export default function HomePage() {
 
   const { markets, isLoading } = useMarkets({ category, sort, search, showResolved })
 
-  // Featured = top 4 active markets by volume (already sorted by volume from API)
-  const featured = useMemo(
-    () => markets.filter(m => m.status === 'active').slice(0, 4),
-    [markets]
-  )
-
   const activeCount = useMemo(() => markets.filter(m => m.status === 'active').length, [markets])
-  const totalCount = markets.length
 
-  const stats = [
-    { label: '总交易量', value: '$87.4M', icon: TrendingUp, color: 'text-blue-400' },
-    { label: '活跃市场', value: String(activeCount), icon: Flame, color: 'text-orange-400' },
-    { label: '市场总数', value: String(totalCount), icon: Zap, color: 'text-yellow-400' },
-  ]
+  // All markets for sidebar (always sorted by volume)
+  const { markets: sidebarMarkets } = useMarkets({ category: 'All', sort: 'volume', search: '', showResolved: false })
 
-  const showFeatured = category === 'All' && !searchInput
+  function handlePillClick(pill: CategoryOption) {
+    setActivePill(pill.value)
+    if (pill.sort) {
+      setSort(pill.sort)
+    }
+  }
+
+  const pillLabel = useMemo(() => {
+    const found = categoryPills.find(p => p.value === activePill)
+    return found?.label ?? '全部'
+  }, [activePill])
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Hero */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-blue-400 text-sm mb-3">
-          <Zap className="w-4 h-4" />
-          <span>基于链上智能合约，公开透明</span>
-        </div>
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
-          预测任何事件的结果
-        </h1>
-        <p className="text-gray-400 text-lg mb-6 max-w-2xl">
-          加密货币、政治、体育、AI……对你的判断下注，赢取收益。
-        </p>
-        <div className="flex flex-wrap gap-3">
-          {stats.map(s => (
-            <div key={s.label} className="flex items-center gap-2 bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5">
-              <s.icon className={cn('w-4 h-4', s.color)} />
-              <div>
-                <p className="text-xs text-gray-500">{s.label}</p>
-                <p className="text-sm font-bold text-white">{s.value}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="max-w-7xl mx-auto px-4 py-4">
+      {/* Compact stats bar */}
+      <div className="flex items-center gap-2 text-xs text-gray-400 mb-4 flex-wrap">
+        <Flame className="w-3.5 h-3.5 text-orange-400" />
+        <span className="text-white font-medium">{activeCount} 个活跃市场</span>
+        <span className="text-gray-600">·</span>
+        <span>$87.4M 总交易量</span>
+        <span className="text-gray-600">·</span>
+        <span className="flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
+          实时更新
+        </span>
       </div>
 
-      {/* Search & Sort */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-          <input
-            type="text"
-            placeholder="搜索市场、标签..."
-            className="w-full h-10 pl-9 pr-4 rounded-lg border border-gray-700 bg-gray-900 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={searchInput}
-            onChange={e => setSearchInput(e.target.value)}
-          />
+      {/* Search bar */}
+      <div className="relative mb-3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+        <input
+          type="text"
+          placeholder="搜索市场、标签..."
+          className="w-full h-10 pl-9 pr-4 rounded-xl border border-gray-700 bg-gray-900 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={searchInput}
+          onChange={e => setSearchInput(e.target.value)}
+        />
+      </div>
+
+      {/* Category nav — single scrollable row */}
+      <div className="flex gap-1.5 overflow-x-auto pb-2 mb-1 scrollbar-hide">
+        {categoryPills.map(pill => (
+          <button
+            key={pill.value}
+            onClick={() => handlePillClick(pill)}
+            className={cn(
+              'shrink-0 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
+              activePill === pill.value
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-400 hover:text-white border border-gray-700'
+            )}
+          >
+            {pill.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Sort row */}
+      <div className="flex items-center justify-between mb-4 mt-3">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-semibold text-white">
+            {searchInput ? `搜索: ${searchInput}` : pillLabel}
+            <span className="text-gray-500 font-normal ml-2">({markets.length})</span>
+          </span>
+          <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              className="w-3 h-3 accent-blue-600"
+              checked={showResolved}
+              onChange={e => setShowResolved(e.target.checked)}
+            />
+            显示已结算
+          </label>
         </div>
         <select
-          className="h-10 px-3 rounded-lg border border-gray-700 bg-gray-900 text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="h-8 px-2 rounded-lg border border-gray-700 bg-gray-900 text-xs text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
           value={sort}
           onChange={e => setSort(e.target.value as SortType)}
         >
@@ -142,88 +204,33 @@ export default function HomePage() {
         </select>
       </div>
 
-      {/* Category filter - grouped */}
-      <div className="mb-6 space-y-2">
-        {categoryGroups.map(group => (
-          <div key={group.label} className="flex items-center gap-2">
-            <span className="text-xs text-gray-600 w-14 shrink-0 hidden sm:block">{group.label}</span>
-            <div className="flex gap-1.5 overflow-x-auto pb-1 flex-wrap">
-              {group.items.map(cat => (
-                <button
-                  key={cat.value}
-                  onClick={() => setCategory(cat.value)}
-                  className={cn(
-                    'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors shrink-0',
-                    category === cat.value
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-900 border border-gray-800 text-gray-400 hover:text-white hover:border-gray-600'
-                  )}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-        <div className="flex items-center gap-2 pt-1">
-          <span className="text-xs text-gray-600 w-14 shrink-0 hidden sm:block" />
-          <button
-            onClick={() => setShowResolved(!showResolved)}
-            className={cn(
-              'px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
-              showResolved ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-900 border-gray-800 text-gray-500 hover:text-gray-300'
-            )}
-          >
-            {showResolved ? '✓ 显示已结算' : '显示已结算'}
-          </button>
-        </div>
-      </div>
-
-      {/* Featured section */}
-      {showFeatured && (
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <Flame className="w-4 h-4 text-orange-400" />
-            <h2 className="text-sm font-semibold text-white">热门市场</h2>
-          </div>
+      {/* Main layout: 3-col grid + sidebar */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Market grid */}
+        <div className="lg:col-span-3">
           {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {Array.from({ length: 4 }).map((_, i) => <MarketCardSkeleton key={i} />)}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {Array.from({ length: 9 }).map((_, i) => <MarketCardSkeleton key={i} />)}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {featured.map(market => (
+          ) : markets.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {markets.map(market => (
                 <MarketCard key={market.id} market={market} />
               ))}
             </div>
+          ) : (
+            <div className="text-center py-20 text-gray-500">
+              <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p>没有找到匹配的市场</p>
+            </div>
           )}
         </div>
-      )}
 
-      {/* All markets */}
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-white">
-          {category === 'All' ? '全部市场' : allCategories.find(c => c.value === category)?.label}
-          <span className="text-gray-500 font-normal ml-2">({markets.length})</span>
-        </h2>
+        {/* Sidebar */}
+        <div className="lg:col-span-1 hidden lg:block">
+          <TrendingSidebar markets={sidebarMarkets} />
+        </div>
       </div>
-
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => <MarketCardSkeleton key={i} />)}
-        </div>
-      ) : markets.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {markets.map(market => (
-            <MarketCard key={market.id} market={market} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-20 text-gray-500">
-          <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p>没有找到匹配的市场</p>
-        </div>
-      )}
     </div>
   )
 }
