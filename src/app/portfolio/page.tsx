@@ -79,8 +79,10 @@ function DepositModal({ open, onClose }: { open: boolean; onClose: () => void })
   return (
     <Modal open={open} onClose={onClose} title="充值">
       {success ? (
-        <div className="flex flex-col items-center gap-3 py-6">
-          <CheckCircle2 className="w-14 h-14 text-emerald-400" />
+        <div className="flex flex-col items-center gap-3 py-8">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
+            <CheckCircle2 className="w-9 h-9 text-emerald-400" />
+          </div>
           <p className="text-white font-semibold text-lg">充值请求已提交</p>
           <p className="text-gray-400 text-sm">资金将在确认后到账</p>
         </div>
@@ -88,17 +90,17 @@ function DepositModal({ open, onClose }: { open: boolean; onClose: () => void })
         <div className="space-y-5">
           {/* Coin selector */}
           <div>
-            <p className="text-xs text-gray-500 mb-2">选择币种</p>
+            <p className="text-xs text-gray-500 mb-2 font-medium">选择币种</p>
             <div className="flex gap-2">
               {(['USDC', 'USDT'] as const).map(c => (
                 <button
                   key={c}
                   onClick={() => setCoin(c)}
                   className={cn(
-                    'flex-1 py-2.5 rounded-lg text-sm font-medium border transition-all',
+                    'flex-1 py-2.5 rounded-lg text-sm font-semibold border transition-all',
                     coin === c
                       ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                      : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600',
+                      : 'border-gray-700 bg-gray-800/60 text-gray-400 hover:border-gray-600 hover:text-gray-300',
                   )}
                 >
                   {c}
@@ -108,28 +110,35 @@ function DepositModal({ open, onClose }: { open: boolean; onClose: () => void })
           </div>
 
           {/* QR placeholder */}
-          <div className="flex flex-col items-center gap-3 p-4 rounded-xl bg-gray-800/60 border border-gray-700">
-            <div className="w-28 h-28 rounded-lg bg-gray-700 flex items-center justify-center">
-              <div className="grid grid-cols-3 gap-1">
-                {Array.from({ length: 9 }).map((_, i) => (
+          <div className="flex flex-col items-center gap-3 p-5 rounded-xl bg-gray-800/40 border border-gray-700/60">
+            <div className="w-32 h-32 rounded-xl bg-white p-3 flex items-center justify-center">
+              <div className="w-full h-full grid grid-cols-7 gap-0.5">
+                {Array.from({ length: 49 }).map((_, i) => (
                   <div
                     key={i}
-                    className={cn('w-6 h-6 rounded-sm', i % 2 === 0 ? 'bg-white' : 'bg-gray-900')}
+                    className={cn(
+                      'rounded-sm',
+                      [0,1,2,3,4,5,6,7,13,14,20,21,27,28,34,35,41,42,48,15,16,17,22,26,33,37,38,39,40,44,45,46].includes(i)
+                        ? 'bg-gray-900'
+                        : 'bg-transparent',
+                    )}
                   />
                 ))}
               </div>
             </div>
-            <p className="text-xs text-gray-500">扫描二维码充值 {coin}</p>
-            <code className="text-xs text-gray-400 font-mono bg-gray-900 px-3 py-1.5 rounded-lg break-all text-center">
-              0x1234567890abcdef1234567890abcdef12345678
-            </code>
+            <div className="text-center w-full">
+              <p className="text-xs text-gray-500 mb-2">扫码充值 {coin}，或复制地址</p>
+              <code className="block text-xs text-gray-400 font-mono bg-gray-900/80 px-3 py-2 rounded-lg break-all border border-gray-700/60">
+                0x1234567890abcdef1234567890abcdef12345678
+              </code>
+            </div>
           </div>
 
           {/* Amount */}
           <div>
-            <p className="text-xs text-gray-500 mb-2">充值金额（可选）</p>
+            <p className="text-xs text-gray-500 mb-2 font-medium">充值金额（可选）</p>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm select-none">$</span>
               <Input
                 type="number"
                 placeholder="0.00"
@@ -138,9 +147,20 @@ function DepositModal({ open, onClose }: { open: boolean; onClose: () => void })
                 className="pl-7"
               />
             </div>
+            <div className="flex gap-2 mt-2">
+              {['100', '500', '1000'].map(v => (
+                <button
+                  key={v}
+                  onClick={() => setAmount(v)}
+                  className="flex-1 py-1.5 rounded-md text-xs font-medium bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200 border border-gray-700 transition-all"
+                >
+                  ${v}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <Button className="w-full" onClick={handleConfirm}>
+          <Button className="w-full h-11" onClick={handleConfirm}>
             确认充值
           </Button>
         </div>
@@ -169,15 +189,17 @@ function WithdrawModal({ open, onClose }: { open: boolean; onClose: () => void }
   return (
     <Modal open={open} onClose={onClose} title="提现">
       {success ? (
-        <div className="flex flex-col items-center gap-3 py-6">
-          <CheckCircle2 className="w-14 h-14 text-emerald-400" />
+        <div className="flex flex-col items-center gap-3 py-8">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
+            <CheckCircle2 className="w-9 h-9 text-emerald-400" />
+          </div>
           <p className="text-white font-semibold text-lg">提现申请已提交</p>
           <p className="text-gray-400 text-sm">资金将在处理后到账</p>
         </div>
       ) : (
         <div className="space-y-5">
           <div>
-            <p className="text-xs text-gray-500 mb-2">提现地址</p>
+            <p className="text-xs text-gray-500 mb-2 font-medium">提现地址</p>
             <Input
               placeholder="输入钱包地址（0x...）"
               value={address}
@@ -185,9 +207,17 @@ function WithdrawModal({ open, onClose }: { open: boolean; onClose: () => void }
             />
           </div>
           <div>
-            <p className="text-xs text-gray-500 mb-2">提现金额</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-gray-500 font-medium">提现金额</p>
+              <button
+                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                onClick={() => setAmount('1250.50')}
+              >
+                全部提现
+              </button>
+            </div>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm select-none">$</span>
               <Input
                 type="number"
                 placeholder="0.00"
@@ -197,12 +227,15 @@ function WithdrawModal({ open, onClose }: { open: boolean; onClose: () => void }
               />
             </div>
           </div>
-          <div className="flex items-center justify-between text-xs text-gray-500 bg-gray-800/60 rounded-lg px-3 py-2.5">
-            <span>可用余额</span>
-            <span className="text-white font-medium">$1,250.50</span>
+          <div className="rounded-lg bg-gray-800/50 border border-gray-700/60 px-4 py-3 flex items-center justify-between">
+            <span className="text-xs text-gray-500">可用余额</span>
+            <span className="text-sm text-white font-semibold">$1,250.50</span>
+          </div>
+          <div className="rounded-lg bg-yellow-500/5 border border-yellow-500/20 px-4 py-2.5">
+            <p className="text-xs text-yellow-400/80">提现通常在 1-3 个工作日内处理，请确保地址正确。</p>
           </div>
           <Button
-            className="w-full"
+            className="w-full h-11"
             variant="outline"
             onClick={handleConfirm}
             disabled={!address || !amount}
@@ -242,23 +275,26 @@ function SellModal({
     }, 2000)
   }
 
-  const estimated = (parseFloat(sellShares) || 0) * currentPrice
+  const qty = Math.min(Math.max(0, parseFloat(sellShares) || 0), shares)
+  const estimated = qty * currentPrice
 
   return (
     <Modal open={open} onClose={onClose} title="卖出仓位">
       {success ? (
-        <div className="flex flex-col items-center gap-3 py-6">
-          <CheckCircle2 className="w-14 h-14 text-emerald-400" />
+        <div className="flex flex-col items-center gap-3 py-8">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
+            <CheckCircle2 className="w-9 h-9 text-emerald-400" />
+          </div>
           <p className="text-white font-semibold text-lg">订单已提交</p>
           <p className="text-gray-400 text-sm">卖出指令已发送</p>
         </div>
       ) : (
         <div className="space-y-5">
-          <div className="p-3 rounded-lg bg-gray-800/60 border border-gray-700">
-            <p className="text-xs text-gray-500 mb-1">市场</p>
-            <p className="text-sm text-white font-medium line-clamp-2">{marketTitle}</p>
-            <div className="mt-2">
-              <Badge variant={outcome === 'yes' ? 'success' : 'danger'}>
+          <div className="p-3.5 rounded-xl bg-gray-800/50 border border-gray-700/60">
+            <p className="text-xs text-gray-500 mb-1.5 font-medium">市场</p>
+            <p className="text-sm text-white font-semibold leading-snug line-clamp-2">{marketTitle}</p>
+            <div className="mt-2.5">
+              <Badge variant={outcome === 'yes' ? 'success' : 'danger'} className="text-xs">
                 {outcome.toUpperCase()}
               </Badge>
             </div>
@@ -266,12 +302,12 @@ function SellModal({
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-gray-500">卖出份数</p>
+              <p className="text-xs text-gray-500 font-medium">卖出份数</p>
               <button
-                className="text-xs text-blue-400 hover:text-blue-300"
+                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
                 onClick={() => setSellShares(String(shares))}
               >
-                全部 ({shares})
+                全部 ({shares} 份)
               </button>
             </div>
             <Input
@@ -281,14 +317,36 @@ function SellModal({
               max={shares}
               onChange={e => setSellShares(e.target.value)}
             />
+            <input
+              type="range"
+              min={0}
+              max={shares}
+              value={qty}
+              onChange={e => setSellShares(e.target.value)}
+              className="w-full mt-2 accent-blue-500 cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-gray-600 -mt-0.5">
+              <span>0</span>
+              <span>{shares}</span>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between text-sm text-gray-400 bg-gray-800/60 rounded-lg px-3 py-2.5">
-            <span>预计收入</span>
-            <span className="text-white font-semibold">{formatCurrency(estimated)}</span>
+          <div className="rounded-xl bg-gray-800/50 border border-gray-700/60 divide-y divide-gray-700/60">
+            <div className="flex items-center justify-between px-4 py-2.5 text-xs">
+              <span className="text-gray-500">当前价格</span>
+              <span className="text-gray-300 font-medium">{Math.round(currentPrice * 100)}¢</span>
+            </div>
+            <div className="flex items-center justify-between px-4 py-2.5 text-xs">
+              <span className="text-gray-500">卖出份数</span>
+              <span className="text-gray-300 font-medium">{qty} 份</span>
+            </div>
+            <div className="flex items-center justify-between px-4 py-3 text-sm">
+              <span className="text-gray-400 font-medium">预计收入</span>
+              <span className="text-white font-bold">{formatCurrency(estimated)}</span>
+            </div>
           </div>
 
-          <Button variant="no" className="w-full" onClick={handleSell}>
+          <Button variant="no" className="w-full h-11" onClick={handleSell} disabled={qty === 0}>
             确认卖出
           </Button>
         </div>
@@ -512,58 +570,54 @@ export default function PortfolioPage() {
 
         {/* ── Open Orders Tab ── */}
         {tab === 'orders' && (
-          <div className="flex flex-col items-center gap-3 py-16 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-gray-800 flex items-center justify-center">
-              <Clock className="w-7 h-7 text-gray-600" />
+          <div className="flex flex-col items-center gap-4 py-20 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-800/80 border border-gray-700/60 flex items-center justify-center">
+              <Clock className="w-8 h-8 text-gray-600" />
             </div>
-            <p className="text-gray-400 font-medium">暂无未成交订单</p>
-            <p className="text-gray-600 text-sm">你的限价单和挂单将显示在这里</p>
+            <div>
+              <p className="text-gray-300 font-semibold text-base mb-1">暂无未成交订单</p>
+              <p className="text-gray-600 text-sm">你的限价单和挂单将显示在这里</p>
+            </div>
           </div>
         )}
 
         {/* ── History Tab ── */}
         {tab === 'history' && (
-          <div className="rounded-xl border border-gray-800 overflow-hidden">
+          <div className="rounded-2xl border border-gray-800 overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-800 bg-gray-900/60">
-                  <th className="text-left px-4 py-3 text-xs text-gray-500 font-medium">市场</th>
-                  <th className="text-left px-4 py-3 text-xs text-gray-500 font-medium hidden sm:table-cell">操作</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500 font-medium">份额</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500 font-medium">价格</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500 font-medium">总额</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500 font-medium hidden md:table-cell">时间</th>
+                <tr className="border-b border-gray-800 bg-gray-900/80">
+                  <th className="text-left px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide">市场</th>
+                  <th className="text-left px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide hidden sm:table-cell">操作</th>
+                  <th className="text-right px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide">份额</th>
+                  <th className="text-right px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide">价格</th>
+                  <th className="text-right px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide">总额</th>
+                  <th className="text-right px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide hidden md:table-cell">时间</th>
                 </tr>
               </thead>
-              <tbody>
-                {mockTrades.map((trade, i) => (
-                  <tr
-                    key={trade.id}
-                    className={cn(
-                      'border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors',
-                      i === mockTrades.length - 1 && 'border-0',
-                    )}
-                  >
-                    <td className="px-4 py-3">
-                      <p className="text-white text-xs font-medium line-clamp-1">{trade.marketTitle}</p>
+              <tbody className="divide-y divide-gray-800/60">
+                {mockTrades.map(trade => (
+                  <tr key={trade.id} className="hover:bg-gray-800/30 transition-colors">
+                    <td className="px-4 py-3.5">
+                      <p className="text-white text-xs font-semibold line-clamp-1 mb-1">{trade.marketTitle}</p>
                       <Badge
                         variant={trade.outcome === 'yes' ? 'success' : 'danger'}
-                        className="mt-1 text-[10px] px-1.5 py-0"
+                        className="text-[10px] px-1.5 py-0"
                       >
                         {trade.outcome.toUpperCase()}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 hidden sm:table-cell">
+                    <td className="px-4 py-3.5 hidden sm:table-cell">
                       <Badge variant={trade.type === 'buy' ? 'success' : 'danger'}>
                         {trade.type === 'buy' ? '买入' : '卖出'}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-300 text-xs">{trade.shares}</td>
-                    <td className="px-4 py-3 text-right text-gray-300 text-xs">{Math.round(trade.price * 100)}¢</td>
-                    <td className="px-4 py-3 text-right font-semibold text-xs text-white">
+                    <td className="px-4 py-3.5 text-right text-gray-300 text-xs font-medium">{trade.shares}</td>
+                    <td className="px-4 py-3.5 text-right text-gray-300 text-xs font-medium">{Math.round(trade.price * 100)}¢</td>
+                    <td className="px-4 py-3.5 text-right font-bold text-xs text-white">
                       {formatCurrency(trade.total)}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-500 text-xs hidden md:table-cell">
+                    <td className="px-4 py-3.5 text-right text-gray-500 text-xs hidden md:table-cell">
                       {formatDate(trade.timestamp)}
                     </td>
                   </tr>
