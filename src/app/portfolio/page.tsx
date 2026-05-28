@@ -161,28 +161,17 @@ function DepositModal({ open, onClose, user }: { open: boolean; onClose: () => v
           </div>
 
           {/* Deposit address */}
-          <div className="flex flex-col items-center gap-3 p-5 rounded-xl bg-gray-800/40 border border-gray-700/60">
-            <div className="w-32 h-32 rounded-xl bg-white p-3 flex items-center justify-center">
-              <div className="w-full h-full grid grid-cols-7 gap-0.5">
-                {Array.from({ length: 49 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={cn(
-                      'rounded-sm',
-                      [0,1,2,3,4,5,6,7,13,14,20,21,27,28,34,35,41,42,48,15,16,17,22,26,33,37,38,39,40,44,45,46].includes(i)
-                        ? 'bg-gray-900'
-                        : 'bg-transparent',
-                    )}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="text-center w-full">
-              <p className="text-xs text-gray-500 mb-2">扫码充值 {coin}，或复制地址</p>
-              <code className="block text-xs text-gray-400 font-mono bg-gray-900/80 px-3 py-2 rounded-lg break-all border border-gray-700/60">
-                {depositAddress || '加载中...'}
+          <div className="rounded-xl bg-gray-800/40 border border-gray-700/60 p-4">
+            <p className="text-xs text-gray-500 mb-2">充值地址（{coin} / ERC-20）</p>
+            {depositAddress ? (
+              <code className="block text-xs text-gray-300 font-mono bg-gray-900/80 px-3 py-2.5 rounded-lg break-all border border-gray-700/60">
+                {depositAddress}
               </code>
-            </div>
+            ) : (
+              <p className="text-xs text-yellow-400/80 bg-yellow-500/5 border border-yellow-500/20 rounded-lg px-3 py-2.5">
+                充值地址加载中，请稍候或联系客服获取地址
+              </p>
+            )}
           </div>
 
           {/* Amount */}

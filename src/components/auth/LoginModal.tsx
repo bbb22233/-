@@ -91,12 +91,11 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
   }
 
   return (
-    <Modal open={open} onClose={handleClose} className="max-w-sm">
+    <Modal open={open} onClose={handleClose} title="登录 / 注册" className="max-w-sm">
       <div className="text-center mb-6">
         <div className="w-12 h-12 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-3">
           <Wallet className="w-6 h-6 text-blue-400" />
         </div>
-        <h2 className="text-xl font-bold text-white">登录 / 注册</h2>
         <p className="text-gray-400 text-sm mt-1">使用邮箱验证码登录</p>
       </div>
 

@@ -34,7 +34,10 @@ export function useMarkets({
   const query = params.toString()
   const url = `/api/markets${query ? `?${query}` : ''}`
 
-  const { data, error, isLoading, mutate } = useSWR<Market[]>(url, fetcher)
+  const { data, error, isLoading, mutate } = useSWR<Market[]>(url, fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  })
 
   return {
     markets: data ?? [],
