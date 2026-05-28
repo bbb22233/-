@@ -1,21 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
+import { useAuthStore } from '@/store/authStore'
 import { User } from '@/types'
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const {
+    user, isLoading, isLoginModalOpen,
+    setUser, setLoading, openLoginModal, closeLoginModal, logout, hydrate, hydrated,
+  } = useAuthStore()
 
+  // Hydrate from localStorage once on first mount across the app
   useEffect(() => {
-    const stored = localStorage.getItem('auth_user')
-    if (stored) setUser(JSON.parse(stored))
-  }, [])
+    if (!hydrated) hydrate()
+  }, [hydrated, hydrate])
 
-  // Can be called with pre-fetched data (from verify endpoint) or just email (legacy)
   const login = async (email: string, userData?: Record<string, unknown>) => {
-    setIsLoading(true)
+    setLoading(true)
     try {
       const data = userData ?? await fetch('/api/auth', {
         method: 'POST',
@@ -37,16 +38,10 @@ export function useAuth() {
       }
 
       setUser(loggedUser)
-      localStorage.setItem('auth_user', JSON.stringify(loggedUser))
-      setIsLoginModalOpen(false)
+      closeLoginModal()
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
-  }
-
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem('auth_user')
   }
 
   return {
@@ -55,7 +50,7 @@ export function useAuth() {
     login,
     logout,
     isLoginModalOpen,
-    openLoginModal: () => setIsLoginModalOpen(true),
-    closeLoginModal: () => setIsLoginModalOpen(false),
+    openLoginModal,
+    closeLoginModal,
   }
 }
