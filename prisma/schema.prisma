@@ -36,19 +36,51 @@ model Market {
 }
 
 model User {
-  id            String     @id @default(cuid())
-  email         String     @unique
-  username      String     @unique
-  walletAddress String?    @unique
-  balance       Float      @default(100)
-  totalPnl      Float      @default(0)
-  winRate       Float      @default(0)
-  marketsTraded Int        @default(0)
-  isAdmin       Boolean    @default(false)
-  createdAt     DateTime   @default(now())
-  trades        Trade[]
-  positions     Position[]
-  comments      Comment[]
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  username           String              @unique
+  walletAddress      String?             @unique
+  balance            Float               @default(100)
+  totalPnl           Float               @default(0)
+  winRate            Float               @default(0)
+  marketsTraded      Int                 @default(0)
+  isAdmin            Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+  trades             Trade[]
+  positions          Position[]
+  comments           Comment[]
+  depositRequests    DepositRequest[]
+  withdrawalRequests WithdrawalRequest[]
+}
+
+model DepositRequest {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Float
+  txHash    String
+  status    String   @default("pending")
+  adminNote String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model WithdrawalRequest {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Float
+  toAddress String
+  status    String   @default("pending")
+  adminNote String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }
 
 model Trade {

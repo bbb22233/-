@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip,
 } from 'recharts'
@@ -61,19 +61,64 @@ function pnlDelta(data: { v: number }[]) {
 }
 
 // ── Deposit Modal ──────────────────────────────────────────────────────────
-function DepositModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function DepositModal({ open, onClose, user }: { open: boolean; onClose: () => void; user: import('@/types').User | null }) {
   const [coin, setCoin] = useState<'USDC' | 'USDT'>('USDC')
   const [amount, setAmount] = useState('')
+  const [txHash, setTxHash] = useState('')
   const [success, setSuccess] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [depositAddress, setDepositAddress] = useState('')
 
-  const handleConfirm = () => {
-    if (!amount) return
-    setSuccess(true)
-    setTimeout(() => {
-      setSuccess(false)
-      setAmount('')
-      onClose()
-    }, 2000)
+  useEffect(() => {
+    if (open) {
+      fetch('/api/admin/settings')
+        .then(r => r.json())
+        .then((data: Record<string, string>) => {
+          if (data.depositAddress) setDepositAddress(data.depositAddress)
+        })
+        .catch(() => {})
+    }
+  }, [open])
+
+  const handleConfirm = async () => {
+    if (!user) {
+      setError('请先登录')
+      return
+    }
+    if (!amount || parseFloat(amount) <= 0) {
+      setError('请输入有效金额')
+      return
+    }
+    if (!txHash.trim()) {
+      setError('请输入交易 Hash')
+      return
+    }
+    setError('')
+    setLoading(true)
+    try {
+      const res = await fetch('/api/deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, amount: parseFloat(amount), txHash: txHash.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error ?? '提交失败')
+        return
+      }
+      setSuccess(true)
+      setTimeout(() => {
+        setSuccess(false)
+        setAmount('')
+        setTxHash('')
+        onClose()
+      }, 3000)
+    } catch {
+      setError('网络错误，请重试')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -83,11 +128,17 @@ function DepositModal({ open, onClose }: { open: boolean; onClose: () => void })
           <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
             <CheckCircle2 className="w-9 h-9 text-emerald-400" />
           </div>
-          <p className="text-white font-semibold text-lg">充值请求已提交</p>
-          <p className="text-gray-400 text-sm">资金将在确认后到账</p>
+          <p className="text-white font-semibold text-lg">充值申请已提交</p>
+          <p className="text-gray-400 text-sm text-center">等待管理员审核（通常1-24小时）</p>
         </div>
       ) : (
         <div className="space-y-5">
+          {!user && (
+            <div className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3">
+              <p className="text-xs text-red-400">请先登录后再充值</p>
+            </div>
+          )}
+
           {/* Coin selector */}
           <div>
             <p className="text-xs text-gray-500 mb-2 font-medium">选择币种</p>
@@ -109,7 +160,7 @@ function DepositModal({ open, onClose }: { open: boolean; onClose: () => void })
             </div>
           </div>
 
-          {/* QR placeholder */}
+          {/* Deposit address */}
           <div className="flex flex-col items-center gap-3 p-5 rounded-xl bg-gray-800/40 border border-gray-700/60">
             <div className="w-32 h-32 rounded-xl bg-white p-3 flex items-center justify-center">
               <div className="w-full h-full grid grid-cols-7 gap-0.5">
@@ -129,14 +180,14 @@ function DepositModal({ open, onClose }: { open: boolean; onClose: () => void })
             <div className="text-center w-full">
               <p className="text-xs text-gray-500 mb-2">扫码充值 {coin}，或复制地址</p>
               <code className="block text-xs text-gray-400 font-mono bg-gray-900/80 px-3 py-2 rounded-lg break-all border border-gray-700/60">
-                0x1234567890abcdef1234567890abcdef12345678
+                {depositAddress || '加载中...'}
               </code>
             </div>
           </div>
 
           {/* Amount */}
           <div>
-            <p className="text-xs text-gray-500 mb-2 font-medium">充值金额（可选）</p>
+            <p className="text-xs text-gray-500 mb-2 font-medium">充值金额</p>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm select-none">$</span>
               <Input
@@ -160,8 +211,22 @@ function DepositModal({ open, onClose }: { open: boolean; onClose: () => void })
             </div>
           </div>
 
-          <Button className="w-full h-11" onClick={handleConfirm}>
-            确认充值
+          {/* TX Hash */}
+          <div>
+            <p className="text-xs text-gray-500 mb-2 font-medium">交易 Hash *</p>
+            <Input
+              placeholder="粘贴您的交易 Hash（0x...）"
+              value={txHash}
+              onChange={e => setTxHash(e.target.value)}
+            />
+          </div>
+
+          {error && (
+            <p className="text-xs text-red-400">{error}</p>
+          )}
+
+          <Button className="w-full h-11" onClick={handleConfirm} disabled={loading || !user}>
+            {loading ? '提交中...' : '确认充值'}
           </Button>
         </div>
       )}
@@ -170,7 +235,7 @@ function DepositModal({ open, onClose }: { open: boolean; onClose: () => void })
 }
 
 // ── Withdraw Modal ─────────────────────────────────────────────────────────
-function WithdrawModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function WithdrawModal({ open, onClose, user }: { open: boolean; onClose: () => void; user: import('@/types').User | null }) {
   const [address, setAddress] = useState('')
   const [amount, setAmount] = useState('')
   const [success, setSuccess] = useState(false)
@@ -629,8 +694,8 @@ export default function PortfolioPage() {
       </div>
 
       {/* ── Modals ── */}
-      <DepositModal open={depositOpen} onClose={() => setDepositOpen(false)} />
-      <WithdrawModal open={withdrawOpen} onClose={() => setWithdrawOpen(false)} />
+      <DepositModal open={depositOpen} onClose={() => setDepositOpen(false)} user={user} />
+      <WithdrawModal open={withdrawOpen} onClose={() => setWithdrawOpen(false)} user={user} />
       {sellTarget && (
         <SellModal
           open={!!sellTarget}
