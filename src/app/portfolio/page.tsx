@@ -379,37 +379,26 @@ export default function PortfolioPage() {
       </div>
 
       {/* ── P&L Chart ── */}
-      <div className="rounded-xl border border-gray-800 bg-gray-900 px-2 pt-4 pb-2">
-        <ResponsiveContainer width="100%" height={120}>
+      <div className="rounded-2xl border border-gray-800 bg-gray-900/60 px-2 pt-5 pb-3">
+        <ResponsiveContainer width="100%" height={130}>
           <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="pnlGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                <stop offset="5%" stopColor={isPositive ? '#3b82f6' : '#ef4444'} stopOpacity={0.25} />
+                <stop offset="95%" stopColor={isPositive ? '#3b82f6' : '#ef4444'} stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis dataKey="t" hide />
             <YAxis domain={['auto', 'auto']} hide />
-            <Tooltip
-              contentStyle={{
-                background: '#111827',
-                border: '1px solid #374151',
-                borderRadius: '8px',
-                fontSize: '12px',
-                color: '#fff',
-              }}
-              formatter={(value) => [formatCurrency(Number(value)), '价值']}
-              labelFormatter={() => ''}
-            />
-            {/* $0 reference line — draw a thin line at min to represent baseline */}
+            <Tooltip content={<ChartTooltip />} />
             <Area
               type="monotone"
               dataKey="v"
-              stroke="#3b82f6"
+              stroke={isPositive ? '#3b82f6' : '#ef4444'}
               strokeWidth={2}
               fill="url(#pnlGrad)"
               dot={false}
-              activeDot={{ r: 4, fill: '#3b82f6' }}
+              activeDot={{ r: 4, fill: isPositive ? '#3b82f6' : '#ef4444', strokeWidth: 0 }}
             />
           </AreaChart>
         </ResponsiveContainer>
