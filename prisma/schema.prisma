@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Market {
+  id               String     @id @default(cuid())
+  title            String
+  description      String
+  category         String
+  status           String     @default("pending")
+  yesPrice         Float      @default(0.5)
+  noPrice          Float      @default(0.5)
+  yesShares        Float      @default(1000)
+  noShares         Float      @default(1000)
+  volume           Float      @default(0)
+  liquidity        Float      @default(100)
+  endDate          DateTime
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  resolvedOutcome  String?
+  resolvedAt       DateTime?
+  tags             String     @default("[]")
+  commentCount     Int        @default(0)
+  participantCount Int        @default(0)
+  contractAddress  String?
+  polymarketId     String?    @unique
+  imageUrl         String?
+  trades           Trade[]
+  positions        Position[]
+  comments         Comment[]
+}
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  username      String     @unique
+  walletAddress String?    @unique
+  balance       Float      @default(100)
+  totalPnl      Float      @default(0)
+  winRate       Float      @default(0)
+  marketsTraded Int        @default(0)
+  isAdmin       Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  trades        Trade[]
+  positions     Position[]
+  comments      Comment[]
+}
+
+model Trade {
+  id        String   @id @default(cuid())
+  marketId  String
+  userId    String
+  type      String
+  outcome   String
+  shares    Float
+  price     Float
+  total     Float
+  fee       Float    @default(0)
+  createdAt DateTime @default(now())
+  market    Market   @relation(fields: [marketId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Position {
+  id        String   @id @default(cuid())
+  marketId  String
+  userId    String
+  outcome   String
+  shares    Float    @default(0)
+  avgPrice  Float    @default(0)
+  claimed   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  market    Market   @relation(fields: [marketId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([marketId, userId, outcome])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  marketId  String
+  userId    String
+  content   String
+  likes     Int      @default(0)
+  createdAt DateTime @default(now())
+  market    Market   @relation(fields: [marketId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
