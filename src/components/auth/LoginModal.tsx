@@ -35,7 +35,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
 
   const handleSendCode = async () => {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('请输入有效的邮箱地址')
+      setError('Please enter a valid email address')
       return
     }
     setError('')
@@ -47,18 +47,18 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
         body: JSON.stringify({ email }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error ?? '发送失败'); return }
+      if (!res.ok) { setError(data.error ?? 'Failed to send code'); return }
       setStep('otp')
       startCountdown()
     } catch {
-      setError('网络错误，请重试')
+      setError('Network error, please try again')
     } finally {
       setSending(false)
     }
   }
 
   const handleVerify = async () => {
-    if (otp.length !== 6) { setError('请输入 6 位验证码'); return }
+    if (otp.length !== 6) { setError('Please enter the 6-digit code'); return }
     setError('')
     setStep('loading')
     try {
@@ -68,13 +68,13 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
         body: JSON.stringify({ email, code: otp }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error ?? '验证失败'); setStep('otp'); return }
+      if (!res.ok) { setError(data.error ?? 'Verification failed'); setStep('otp'); return }
       // Use login from useAuth to set user state
       await login(email, data)
       setStep('done')
       setTimeout(() => { handleClose() }, 1500)
     } catch {
-      setError('网络错误，请重试')
+      setError('Network error, please try again')
       setStep('otp')
     }
   }
@@ -91,18 +91,18 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="登录 / 注册" className="max-w-sm">
+    <Modal open={open} onClose={handleClose} title="Sign In / Register" className="max-w-sm">
       <div className="text-center mb-6">
         <div className="w-12 h-12 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-3">
           <Wallet className="w-6 h-6 text-blue-400" />
         </div>
-        <p className="text-gray-400 text-sm mt-1">使用邮箱验证码登录</p>
+        <p className="text-gray-400 text-sm mt-1">Sign in with your email verification code</p>
       </div>
 
       {step === 'email' && (
         <div className="space-y-4">
           <div>
-            <label className="text-sm text-gray-400 mb-1.5 block">邮箱地址</label>
+            <label className="text-sm text-gray-400 mb-1.5 block">Email Address</label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <Input
@@ -118,7 +118,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
             {error && <p className="text-red-400 text-xs mt-1.5">{error}</p>}
           </div>
           <Button className="w-full h-11" onClick={handleSendCode} disabled={sending}>
-            {sending ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />发送中...</> : '发送验证码'}
+            {sending ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Sending...</> : 'Send Code'}
           </Button>
         </div>
       )}
@@ -129,13 +129,13 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
             onClick={() => { setStep('email'); setOtp(''); setError('') }}
             className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors mb-1"
           >
-            <ArrowLeft className="w-3 h-3" /> 更换邮箱
+            <ArrowLeft className="w-3 h-3" /> Change email
           </button>
           <div className="text-sm text-gray-400 bg-gray-800/60 rounded-lg px-3 py-2.5">
-            验证码已发送至 <span className="text-white font-medium">{email}</span>
+            Verification code sent to <span className="text-white font-medium">{email}</span>
           </div>
           <div>
-            <label className="text-sm text-gray-400 mb-1.5 block">输入 6 位验证码</label>
+            <label className="text-sm text-gray-400 mb-1.5 block">Enter 6-digit code</label>
             <Input
               type="text"
               inputMode="numeric"
@@ -150,14 +150,14 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
             {error && <p className="text-red-400 text-xs mt-1.5">{error}</p>}
           </div>
           <Button className="w-full h-11" onClick={handleVerify} disabled={otp.length !== 6}>
-            验证并登录
+            Verify &amp; Sign In
           </Button>
           <button
             className="w-full text-sm text-gray-500 hover:text-gray-300 disabled:opacity-40 transition-colors"
             onClick={handleSendCode}
             disabled={countdown > 0 || sending}
           >
-            {countdown > 0 ? `重新发送 (${countdown}s)` : '重新发送验证码'}
+            {countdown > 0 ? `Resend (${countdown}s)` : 'Resend code'}
           </button>
         </div>
       )}
@@ -166,8 +166,8 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
         <div className="py-10 text-center space-y-4">
           <Loader2 className="w-10 h-10 text-blue-400 animate-spin mx-auto" />
           <div>
-            <p className="text-white font-medium">正在登录...</p>
-            <p className="text-gray-500 text-sm mt-1">自动生成智能钱包</p>
+            <p className="text-white font-medium">Signing in...</p>
+            <p className="text-gray-500 text-sm mt-1">Setting up your smart wallet</p>
           </div>
         </div>
       )}
@@ -178,8 +178,8 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
             <CheckCircle className="w-9 h-9 text-emerald-400" />
           </div>
           <div>
-            <p className="text-white font-semibold text-lg">登录成功！</p>
-            <p className="text-gray-500 text-sm mt-1">智能钱包已就绪</p>
+            <p className="text-white font-semibold text-lg">Signed in successfully!</p>
+            <p className="text-gray-500 text-sm mt-1">Your smart wallet is ready</p>
           </div>
         </div>
       )}

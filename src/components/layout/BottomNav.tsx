@@ -7,11 +7,11 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 
 const tabs = [
-  { label: '首页', icon: Home,     href: '/',            exact: true  },
-  { label: '搜索', icon: Search,   href: '/markets',     exact: false },
-  { label: '排行', icon: Trophy,   href: '/leaderboard', exact: true  },
-  { label: '持仓', icon: BarChart2, href: '/portfolio',  exact: true  },
-  { label: '我的', icon: User,     href: '/profile',     exact: true  },
+  { label: 'Home',       icon: Home,     href: '/',            exact: true  },
+  { label: 'Search',     icon: Search,   href: '/markets',     exact: false },
+  { label: 'Leaderboard', icon: Trophy,  href: '/leaderboard', exact: true  },
+  { label: 'Portfolio',  icon: BarChart2, href: '/portfolio',  exact: true  },
+  { label: 'Profile',    icon: User,     href: '/profile',     exact: true  },
 ]
 
 export function BottomNav() {

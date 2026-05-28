@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { TrendingUp, Trophy, PlusCircle, Wallet, LogOut, User, BarChart2 } from 'lucide-react'
@@ -11,16 +11,28 @@ import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
 const navLinks = [
-  { href: '/', label: '市场', icon: TrendingUp },
-  { href: '/portfolio', label: '持仓', icon: BarChart2 },
-  { href: '/leaderboard', label: '排行榜', icon: Trophy },
-  { href: '/create', label: '创建市场', icon: PlusCircle },
+  { href: '/', label: 'Markets', icon: TrendingUp },
+  { href: '/portfolio', label: 'Portfolio', icon: BarChart2 },
+  { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
+  { href: '/create', label: 'Create', icon: PlusCircle },
 ]
 
 export function Header() {
   const pathname = usePathname()
   const { user, logout, isLoginModalOpen, openLoginModal, closeLoginModal } = useAuth()
   const [profileOpen, setProfileOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!profileOpen) return
+    function handleMouseDown(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setProfileOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleMouseDown)
+    return () => document.removeEventListener('mousedown', handleMouseDown)
+  }, [profileOpen])
 
   return (
     <>
@@ -56,7 +68,7 @@ export function Header() {
           {/* Right side */}
           <div className="flex items-center gap-2">
             {user ? (
-              <div className="relative">
+              <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
                   className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-900 px-3 py-1.5 hover:bg-gray-800 transition-colors"
@@ -77,20 +89,20 @@ export function Header() {
                       <p className="text-xs text-gray-600 mt-0.5">{user.walletAddress}</p>
                     </div>
                     <Link href="/portfolio" className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors" onClick={() => setProfileOpen(false)}>
-                      <Wallet className="w-4 h-4" /> 我的持仓
+                      <Wallet className="w-4 h-4" /> My Portfolio
                     </Link>
                     <Link href="/profile" className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors" onClick={() => setProfileOpen(false)}>
-                      <User className="w-4 h-4" /> 个人资料
+                      <User className="w-4 h-4" /> Profile
                     </Link>
                     <button onClick={() => { logout(); setProfileOpen(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-gray-800 rounded-lg transition-colors">
-                      <LogOut className="w-4 h-4" /> 退出登录
+                      <LogOut className="w-4 h-4" /> Sign Out
                     </button>
                   </div>
                 )}
               </div>
             ) : (
               <Button onClick={openLoginModal} size="sm">
-                登录 / 注册
+                Sign In / Register
               </Button>
             )}
           </div>
@@ -99,9 +111,6 @@ export function Header() {
       </header>
 
       <LoginModal open={isLoginModalOpen} onClose={closeLoginModal} />
-
-      {/* Overlay to close profile dropdown */}
-      {profileOpen && <div className="fixed inset-0 z-30" onClick={() => setProfileOpen(false)} />}
     </>
   )
 }

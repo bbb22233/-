@@ -17,22 +17,22 @@ type CategoryOption = {
 }
 
 const categoryPills: CategoryOption[] = [
-  { label: '热门', value: '__hot__', sort: 'volume' },
-  { label: '突发', value: '__breaking__', sort: 'newest' },
-  { label: '最新', value: '__new__', sort: 'newest' },
-  { label: '全部', value: 'All' },
+  { label: 'Trending', value: '__hot__', sort: 'volume' },
+  { label: 'Breaking', value: '__breaking__', sort: 'newest' },
+  { label: 'New', value: '__new__', sort: 'newest' },
+  { label: 'All', value: 'All' },
   { label: 'BTC', value: 'BTC' },
   { label: 'ETH', value: 'ETH' },
   { label: 'DeFi', value: 'DeFi' },
-  { label: '政治', value: 'Politics' },
-  { label: '选举', value: 'Elections' },
-  { label: '体育', value: 'Sports' },
+  { label: 'Politics', value: 'Politics' },
+  { label: 'Elections', value: 'Elections' },
+  { label: 'Sports', value: 'Sports' },
   { label: 'AI', value: 'AI' },
-  { label: '科技', value: 'Tech' },
-  { label: '娱乐', value: 'Entertainment' },
-  { label: '世界', value: 'World' },
-  { label: '经济', value: 'Economy' },
-  { label: '监管', value: 'Regulation' },
+  { label: 'Tech', value: 'Tech' },
+  { label: 'Entertainment', value: 'Entertainment' },
+  { label: 'World', value: 'World' },
+  { label: 'Economy', value: 'Economy' },
+  { label: 'Regulation', value: 'Regulation' },
 ]
 
 const SPECIAL_VALUES = new Set(['__hot__', '__breaking__', '__new__'])
@@ -71,7 +71,7 @@ function TrendingSidebar({ markets }: { markets: Market[] }) {
   return (
     <div className="rounded-2xl border border-gray-800 bg-gray-900 p-4 sticky top-20">
       <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-        <Zap className="w-4 h-4 text-yellow-400" /> 热门市场
+        <Zap className="w-4 h-4 text-yellow-400" /> Trending Markets
       </h3>
       {top5.map((m, i) => (
         <Link
@@ -128,7 +128,7 @@ export default function HomePage() {
 
   const pillLabel = useMemo(() => {
     const found = categoryPills.find(p => p.value === activePill)
-    return found?.label ?? '全部'
+    return found?.label ?? 'All'
   }, [activePill])
 
   return (
@@ -136,13 +136,13 @@ export default function HomePage() {
       {/* Compact stats bar */}
       <div className="flex items-center gap-2 text-xs text-gray-400 mb-4 flex-wrap">
         <Flame className="w-3.5 h-3.5 text-orange-400" />
-        <span className="text-white font-medium">{activeCount} 个活跃市场</span>
+        <span className="text-white font-medium">{activeCount} active markets</span>
         <span className="text-gray-600">·</span>
-        <span>$87.4M 总交易量</span>
+        <span>$87.4M total volume</span>
         <span className="text-gray-600">·</span>
         <span className="flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
-          实时更新
+          Live
         </span>
       </div>
 
@@ -151,7 +151,7 @@ export default function HomePage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
         <input
           type="text"
-          placeholder="搜索市场、标签..."
+          placeholder="Search markets, tags..."
           className="w-full h-10 pl-9 pr-4 rounded-xl border border-gray-700 bg-gray-900 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={searchInput}
           onChange={e => setSearchInput(e.target.value)}
@@ -180,7 +180,7 @@ export default function HomePage() {
       <div className="flex items-center justify-between mb-4 mt-3">
         <div className="flex items-center gap-3">
           <span className="text-sm font-semibold text-white">
-            {searchInput ? `搜索: ${searchInput}` : pillLabel}
+            {searchInput ? `Search: ${searchInput}` : pillLabel}
             <span className="text-gray-500 font-normal ml-2">({markets.length})</span>
           </span>
           <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
@@ -190,7 +190,7 @@ export default function HomePage() {
               checked={showResolved}
               onChange={e => setShowResolved(e.target.checked)}
             />
-            显示已结算
+            Show resolved
           </label>
         </div>
         <select
@@ -198,9 +198,9 @@ export default function HomePage() {
           value={sort}
           onChange={e => setSort(e.target.value as SortType)}
         >
-          <option value="volume">按交易量</option>
-          <option value="newest">最新创建</option>
-          <option value="ending">即将结束</option>
+          <option value="volume">By Volume</option>
+          <option value="newest">Newest</option>
+          <option value="ending">Ending Soon</option>
         </select>
       </div>
 
@@ -221,7 +221,7 @@ export default function HomePage() {
           ) : (
             <div className="text-center py-20 text-gray-500">
               <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p>没有找到匹配的市场</p>
+              <p>No markets found</p>
             </div>
           )}
         </div>
