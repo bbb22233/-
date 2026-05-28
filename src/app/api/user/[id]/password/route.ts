@@ -21,7 +21,7 @@ export async function PATCH(
     }
 
     if (!newPassword || newPassword.length < 6) {
-      return NextResponse.json({ error: '密码至少需要 6 位字符' }, { status: 400 })
+      return NextResponse.json({ error: 'PIN must be at least 6 characters' }, { status: 400 })
     }
 
     const user = await prisma.user.findUnique({ where: { id } })
@@ -32,10 +32,10 @@ export async function PATCH(
     // If user already has a withdrawal password, require current password
     if (user.withdrawalPassword) {
       if (!currentPassword) {
-        return NextResponse.json({ error: '请输入当前提款密码' }, { status: 400 })
+        return NextResponse.json({ error: 'Please enter your current Withdrawal PIN' }, { status: 400 })
       }
       if (currentPassword !== user.withdrawalPassword) {
-        return NextResponse.json({ error: '当前提款密码错误' }, { status: 401 })
+        return NextResponse.json({ error: 'Incorrect Withdrawal PIN' }, { status: 401 })
       }
     }
 

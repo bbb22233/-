@@ -62,15 +62,15 @@ function ChangePasswordModal({ open, onClose }: { open: boolean; onClose: () => 
   const handleSubmit = () => {
     setError('')
     if (!current || !next || !confirm) {
-      setError('请填写所有字段')
+      setError('Please fill in all fields')
       return
     }
     if (next.length < 8) {
-      setError('新密码至少需要 8 位字符')
+      setError('New password must be at least 8 characters')
       return
     }
     if (next !== confirm) {
-      setError('两次输入的新密码不一致')
+      setError('New passwords do not match')
       return
     }
     setSuccess(true)
@@ -84,23 +84,23 @@ function ChangePasswordModal({ open, onClose }: { open: boolean; onClose: () => 
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="修改密码">
+    <Modal open={open} onClose={onClose} title="Change Password">
       {success ? (
         <div className="flex flex-col items-center gap-3 py-8">
           <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
             <CheckCircle2 className="w-9 h-9 text-emerald-400" />
           </div>
-          <p className="text-white font-semibold text-lg">密码修改成功</p>
-          <p className="text-gray-400 text-sm">请使用新密码重新登录</p>
+          <p className="text-white font-semibold text-lg">Password changed successfully</p>
+          <p className="text-gray-400 text-sm">Please sign in with your new password</p>
         </div>
       ) : (
         <div className="space-y-4">
           <div>
-            <p className="text-xs text-gray-500 mb-2 font-medium">当前密码</p>
+            <p className="text-xs text-gray-500 mb-2 font-medium">Current password</p>
             <div className="relative">
               <Input
                 type={showCurrent ? 'text' : 'password'}
-                placeholder="输入当前密码"
+                placeholder="Enter current password"
                 value={current}
                 onChange={e => setCurrent(e.target.value)}
                 className="pr-10"
@@ -115,11 +115,11 @@ function ChangePasswordModal({ open, onClose }: { open: boolean; onClose: () => 
           </div>
 
           <div>
-            <p className="text-xs text-gray-500 mb-2 font-medium">新密码</p>
+            <p className="text-xs text-gray-500 mb-2 font-medium">New password</p>
             <div className="relative">
               <Input
                 type={showNext ? 'text' : 'password'}
-                placeholder="至少 8 位字符"
+                placeholder="At least 8 characters"
                 value={next}
                 onChange={e => setNext(e.target.value)}
                 className="pr-10"
@@ -134,10 +134,10 @@ function ChangePasswordModal({ open, onClose }: { open: boolean; onClose: () => 
           </div>
 
           <div>
-            <p className="text-xs text-gray-500 mb-2 font-medium">确认新密码</p>
+            <p className="text-xs text-gray-500 mb-2 font-medium">Confirm new password</p>
             <Input
               type="password"
-              placeholder="再次输入新密码"
+              placeholder="Re-enter new password"
               value={confirm}
               onChange={e => setConfirm(e.target.value)}
             />
@@ -150,7 +150,7 @@ function ChangePasswordModal({ open, onClose }: { open: boolean; onClose: () => 
           )}
 
           <Button className="w-full h-11 mt-2" onClick={handleSubmit}>
-            确认修改
+            Confirm Change
           </Button>
         </div>
       )}
@@ -158,7 +158,7 @@ function ChangePasswordModal({ open, onClose }: { open: boolean; onClose: () => 
   )
 }
 
-// ── Set Withdrawal Password Modal ─────────────────────────────────────────
+// ── Set Withdrawal PIN Modal ──────────────────────────────────────────────
 function SetWithdrawalPasswordModal({
   open,
   onClose,
@@ -183,15 +183,15 @@ function SetWithdrawalPasswordModal({
   const handleSubmit = async () => {
     setError('')
     if (isUpdate && !currentPwd) {
-      setError('请输入当前提款密码')
+      setError('Please enter your current Withdrawal PIN')
       return
     }
     if (!newPwd || newPwd.length < 6) {
-      setError('新密码至少需要 6 位字符')
+      setError('PIN must be at least 6 characters')
       return
     }
     if (newPwd !== confirmPwd) {
-      setError('两次输入的新密码不一致')
+      setError('PINs do not match')
       return
     }
     setLoading(true)
@@ -207,7 +207,7 @@ function SetWithdrawalPasswordModal({
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error ?? '操作失败')
+        setError(data.error ?? 'Operation failed')
         return
       }
       setSuccess(true)
@@ -220,42 +220,42 @@ function SetWithdrawalPasswordModal({
         onClose()
       }, 2000)
     } catch {
-      setError('网络错误，请重试')
+      setError('Network error, please try again')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={isUpdate ? '修改提款密码' : '设置提款密码'}>
+    <Modal open={open} onClose={onClose} title={isUpdate ? 'Change Withdrawal PIN' : 'Set Withdrawal PIN'}>
       {success ? (
         <div className="flex flex-col items-center gap-3 py-8">
           <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
             <CheckCircle2 className="w-9 h-9 text-emerald-400" />
           </div>
           <p className="text-white font-semibold text-lg">
-            {isUpdate ? '提款密码修改成功' : '提款密码设置成功'}
+            {isUpdate ? 'Withdrawal PIN updated' : 'Withdrawal PIN set successfully'}
           </p>
         </div>
       ) : (
         <div className="space-y-4">
           {isUpdate && (
             <div>
-              <p className="text-xs text-gray-500 mb-2 font-medium">当前提款密码</p>
+              <p className="text-xs text-gray-500 mb-2 font-medium">Current Withdrawal PIN</p>
               <Input
                 type="password"
-                placeholder="输入当前提款密码"
+                placeholder="Enter current PIN"
                 value={currentPwd}
                 onChange={e => setCurrentPwd(e.target.value)}
               />
             </div>
           )}
           <div>
-            <p className="text-xs text-gray-500 mb-2 font-medium">新密码</p>
+            <p className="text-xs text-gray-500 mb-2 font-medium">New PIN</p>
             <div className="relative">
               <Input
                 type={showNew ? 'text' : 'password'}
-                placeholder="至少 6 位字符"
+                placeholder="At least 6 characters"
                 value={newPwd}
                 onChange={e => setNewPwd(e.target.value)}
                 className="pr-10"
@@ -269,10 +269,10 @@ function SetWithdrawalPasswordModal({
             </div>
           </div>
           <div>
-            <p className="text-xs text-gray-500 mb-2 font-medium">确认新密码</p>
+            <p className="text-xs text-gray-500 mb-2 font-medium">Confirm new PIN</p>
             <Input
               type="password"
-              placeholder="再次输入新密码"
+              placeholder="Re-enter new PIN"
               value={confirmPwd}
               onChange={e => setConfirmPwd(e.target.value)}
             />
@@ -285,7 +285,7 @@ function SetWithdrawalPasswordModal({
           )}
 
           <Button className="w-full h-11 mt-2" onClick={handleSubmit} disabled={loading}>
-            {loading ? '提交中...' : '确认'}
+            {loading ? 'Saving...' : 'Confirm'}
           </Button>
         </div>
       )}
@@ -360,9 +360,9 @@ export default function ProfilePage() {
           <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mx-auto mb-5">
             <Shield className="w-8 h-8 text-blue-400" />
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">个人资料</h2>
-          <p className="text-gray-400 mb-6">登录后查看个人资料</p>
-          <Button onClick={openLoginModal}>登录 / 注册</Button>
+          <h2 className="text-xl font-bold text-white mb-2">Profile</h2>
+          <p className="text-gray-400 mb-6">Sign in to view your profile</p>
+          <Button onClick={openLoginModal}>Sign In / Register</Button>
         </div>
         <LoginModal open={isLoginModalOpen} onClose={closeLoginModal} />
       </>
@@ -379,7 +379,7 @@ export default function ProfilePage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setSaveError(data.error ?? '保存失败')
+        setSaveError(data.error ?? 'Save failed')
         return
       }
       // Update localStorage
@@ -392,7 +392,7 @@ export default function ProfilePage() {
       setEditingUsername(false)
       setTimeout(() => setSaved(false), 2500)
     } catch {
-      setSaveError('网络错误，请重试')
+      setSaveError('Network error, please try again')
     }
   }
 
@@ -409,28 +409,28 @@ export default function ProfilePage() {
 
   const stats = [
     {
-      label: '总盈亏',
+      label: 'Total P&L',
       value: `+${formatCurrency(mockUser.totalPnl)}`,
       color: 'text-emerald-400',
       bg: 'bg-emerald-500/10',
       icon: TrendingUp,
     },
     {
-      label: '胜率',
+      label: 'Win Rate',
       value: `${mockUser.winRate}%`,
       color: 'text-blue-400',
       bg: 'bg-blue-500/10',
       icon: Trophy,
     },
     {
-      label: '交易市场数',
+      label: 'Markets Traded',
       value: String(mockUser.marketsTraded),
       color: 'text-purple-400',
       bg: 'bg-purple-500/10',
       icon: BarChart2,
     },
     {
-      label: '加入时间',
+      label: 'Member Since',
       value: formatDate(mockUser.joinedAt),
       color: 'text-gray-400',
       bg: 'bg-gray-500/10',
@@ -494,7 +494,7 @@ export default function ProfilePage() {
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
-                  {saved && <span className="text-xs text-emerald-400 font-medium">已保存</span>}
+                  {saved && <span className="text-xs text-emerald-400 font-medium">Saved</span>}
                 </>
               )}
             </div>
@@ -519,7 +519,7 @@ export default function ProfilePage() {
 
           {/* Balance (right side) */}
           <div className="hidden sm:block text-right shrink-0">
-            <p className="text-xs text-gray-500 mb-0.5">可用余额</p>
+            <p className="text-xs text-gray-500 mb-0.5">Available balance</p>
             <p className="text-2xl font-bold text-white">{formatCurrency(user.balance)}</p>
           </div>
         </div>
@@ -542,13 +542,13 @@ export default function ProfilePage() {
       <div className="rounded-2xl border border-gray-800 bg-gray-900/60 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-800 flex items-center gap-2">
           <Bell className="w-4 h-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-white">通知设置</h2>
+          <h2 className="text-sm font-semibold text-white">Notifications</h2>
         </div>
         <div className="divide-y divide-gray-800/60">
           <div className="flex items-center justify-between px-5 py-4">
             <div>
-              <p className="text-sm font-medium text-white">市场结算通知</p>
-              <p className="text-xs text-gray-500 mt-0.5">当你持仓的市场结算时通知你</p>
+              <p className="text-sm font-medium text-white">Market settlement alerts</p>
+              <p className="text-xs text-gray-500 mt-0.5">Notify me when markets I hold positions in are resolved</p>
             </div>
             <Toggle
               enabled={notifySettlement}
@@ -557,8 +557,8 @@ export default function ProfilePage() {
           </div>
           <div className="flex items-center justify-between px-5 py-4">
             <div>
-              <p className="text-sm font-medium text-white">价格提醒</p>
-              <p className="text-xs text-gray-500 mt-0.5">当价格发生重大变动时提醒你</p>
+              <p className="text-sm font-medium text-white">Price alerts</p>
+              <p className="text-xs text-gray-500 mt-0.5">Notify me when prices move significantly</p>
             </div>
             <Toggle
               enabled={notifyPrice}
@@ -572,32 +572,32 @@ export default function ProfilePage() {
       <div className="rounded-2xl border border-gray-800 bg-gray-900/60 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-800 flex items-center gap-2">
           <Lock className="w-4 h-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-white">账户安全</h2>
+          <h2 className="text-sm font-semibold text-white">Account Security</h2>
         </div>
         <div className="divide-y divide-gray-800/60">
           <div className="flex items-center justify-between px-5 py-4">
             <div>
-              <p className="text-sm font-medium text-white">登录密码</p>
-              <p className="text-xs text-gray-500 mt-0.5">定期修改密码可以保护账户安全</p>
+              <p className="text-sm font-medium text-white">Password</p>
+              <p className="text-xs text-gray-500 mt-0.5">Changing your password regularly keeps your account safe</p>
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setChangePasswordOpen(true)}
             >
-              修改密码
+              Change Password
             </Button>
           </div>
           <div className="flex items-center justify-between px-5 py-4">
             <div>
-              <p className="text-sm font-medium text-white">两步验证</p>
+              <p className="text-sm font-medium text-white">Two-Factor Auth</p>
               <p className="text-xs text-gray-500 mt-0.5">
-                {twoFactor ? '已开启，使用验证器 App 保护账户' : '开启后登录需要额外验证码'}
+                {twoFactor ? 'Enabled — using an authenticator app' : 'Require a second verification step on login'}
               </p>
             </div>
             <div className="flex items-center gap-2">
               {twoFactor && (
-                <Badge variant="success" className="text-[10px] px-1.5 py-0">已开启</Badge>
+                <Badge variant="success" className="text-[10px] px-1.5 py-0">Enabled</Badge>
               )}
               <Toggle
                 enabled={twoFactor}
@@ -608,29 +608,29 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* ── Withdrawal Password ── */}
+      {/* ── Withdrawal PIN ── */}
       <div className="rounded-2xl border border-gray-800 bg-gray-900/60 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-800 flex items-center gap-2">
           <Lock className="w-4 h-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-white">提款密码</h2>
+          <h2 className="text-sm font-semibold text-white">Withdrawal PIN</h2>
         </div>
         <div className="flex items-center justify-between px-5 py-4">
           <div>
-            <p className="text-sm font-medium text-white">提款密码</p>
-            <p className="text-xs text-gray-500 mt-0.5">用于保护提款操作的安全</p>
+            <p className="text-sm font-medium text-white">Withdrawal PIN</p>
+            <p className="text-xs text-gray-500 mt-0.5">Protects your withdrawal operations</p>
           </div>
           <div className="flex items-center gap-3">
             {hasWithdrawalPassword ? (
-              <Badge variant="success" className="text-[10px] px-1.5 py-0">已设置</Badge>
+              <Badge variant="success" className="text-[10px] px-1.5 py-0">Set</Badge>
             ) : (
-              <Badge className="text-[10px] px-1.5 py-0 bg-gray-700 text-gray-400 border-gray-600">尚未设置</Badge>
+              <Badge className="text-[10px] px-1.5 py-0 bg-gray-700 text-gray-400 border-gray-600">Not set</Badge>
             )}
             <Button
               variant="outline"
               size="sm"
               onClick={() => setWithdrawalPasswordModalOpen(true)}
             >
-              {hasWithdrawalPassword ? '修改提款密码' : '设置提款密码'}
+              {hasWithdrawalPassword ? 'Change PIN' : 'Set PIN'}
             </Button>
           </div>
         </div>
@@ -639,7 +639,7 @@ export default function ProfilePage() {
       {/* ── Recent Activity ── */}
       <div className="rounded-2xl border border-gray-800 bg-gray-900/60 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-800">
-          <h2 className="text-sm font-semibold text-white">最近交易</h2>
+          <h2 className="text-sm font-semibold text-white">Recent Trades</h2>
         </div>
         <div className="divide-y divide-gray-800/60">
           {mockTrades.slice(0, 5).map(trade => (
@@ -664,10 +664,10 @@ export default function ProfilePage() {
                     variant={trade.type === 'buy' ? 'success' : 'danger'}
                     className="text-[10px] px-1.5 py-0"
                   >
-                    {trade.type === 'buy' ? '买入' : '卖出'}
+                    {trade.type === 'buy' ? 'Buy' : 'Sell'}
                   </Badge>
                   <span className="text-xs text-gray-500">
-                    {trade.outcome.toUpperCase()} · {trade.shares} 份 · {Math.round(trade.price * 100)}¢
+                    {trade.outcome.toUpperCase()} · {trade.shares} shares · {Math.round(trade.price * 100)}¢
                   </span>
                 </div>
               </div>
@@ -687,16 +687,16 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* ── Online Support ── */}
+      {/* ── Support ── */}
       <div id="support" className="rounded-2xl border border-gray-800 bg-gray-900/60 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-800 flex items-center gap-2">
           <MessageCircle className="w-4 h-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-white">在线客服</h2>
+          <h2 className="text-sm font-semibold text-white">Support</h2>
         </div>
         <div className="px-5 py-4">
           {!hasSupportChannels ? (
             <p className="text-sm text-gray-400">
-              暂无在线客服，请发送邮件至{' '}
+              No live support channels configured. Please email us at{' '}
               <a href="mailto:support@example.com" className="text-blue-400 hover:text-blue-300 transition-colors">
                 support@example.com
               </a>
@@ -752,7 +752,7 @@ export default function ProfilePage() {
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.328.328 0 0 0 .186-.066l1.979-1.091a.864.864 0 0 1 .717-.08 9.94 9.94 0 0 0 2.742.389c.28 0 .555-.012.825-.037-.271-.757-.42-1.566-.42-2.415 0-3.797 3.568-6.873 7.97-6.873.29 0 .574.017.853.048C16.547 4.616 12.876 2.188 8.691 2.188zm-1.77 3.818a1.18 1.18 0 1 1 0 2.36 1.18 1.18 0 0 1 0-2.36zm3.94 0a1.18 1.18 0 1 1 0 2.36 1.18 1.18 0 0 1 0-2.36zM15.27 9.5c-3.624 0-6.563 2.677-6.563 5.978 0 3.302 2.939 5.979 6.563 5.979a8.157 8.157 0 0 0 2.26-.323.71.71 0 0 1 .589.065l1.632.9a.271.271 0 0 0 .154.054.243.243 0 0 0 .239-.243c0-.059-.024-.113-.04-.175l-.323-1.22a.485.485 0 0 1 .176-.548C21.023 18.85 22 17.26 22 15.478 22 12.177 19.06 9.5 15.27 9.5zm-1.977 3.125a.972.972 0 1 1 0 1.944.972.972 0 0 1 0-1.944zm3.954 0a.972.972 0 1 1 0 1.944.972.972 0 0 1 0-1.944z" />
                   </svg>
-                  微信
+                  WeChat
                 </a>
               )}
             </div>
@@ -760,13 +760,13 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* ── Danger Zone ── */}
+      {/* ── Sign Out ── */}
       <div className="rounded-2xl border border-red-900/30 bg-red-950/10 p-5">
         <div className="flex items-center gap-2 mb-1">
           <LogOut className="w-4 h-4 text-red-400" />
-          <h2 className="text-sm font-semibold text-red-400">退出登录</h2>
+          <h2 className="text-sm font-semibold text-red-400">Sign Out</h2>
         </div>
-        <p className="text-xs text-gray-500 mb-4">退出后你需要重新登录才能访问账户</p>
+        <p className="text-xs text-gray-500 mb-4">You will need to sign in again to access your account</p>
         <Button
           variant="destructive"
           size="sm"
@@ -774,7 +774,7 @@ export default function ProfilePage() {
           className="gap-2"
         >
           <LogOut className="w-3.5 h-3.5" />
-          退出登录
+          Sign Out
         </Button>
       </div>
 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { PlusCircle, Info, Loader2, CheckCircle, Calendar, DollarSign, ChevronDown } from 'lucide-react'
+import { PlusCircle, Info, Loader2, CheckCircle, Calendar, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/useAuth'
@@ -11,7 +11,7 @@ import { MarketCategory } from '@/types'
 import { cn } from '@/lib/utils'
 
 const categories: MarketCategory[] = ['BTC', 'ETH', 'DeFi', 'Layer2', 'NFT', 'Regulation', 'Politics', 'Elections', 'Sports', 'Entertainment', 'AI', 'Tech', 'Economy', 'World']
-const resolutionSources = ['Chainlink Oracle', '管理员手动结算', 'CoinGecko API', 'Dune Analytics']
+const resolutionSources = ['Chainlink Oracle', 'Admin Manual Settlement', 'CoinGecko API', 'Dune Analytics']
 
 export default function CreateMarketPage() {
   const router = useRouter()
@@ -39,19 +39,19 @@ export default function CreateMarketPage() {
 
   const validateStep1 = () => {
     const e: Record<string, string> = {}
-    if (!form.title.trim() || form.title.length < 10) e.title = '标题至少10个字符'
-    if (!form.description.trim() || form.description.length < 20) e.description = '描述至少20个字符'
-    if (!form.category) e.category = '请选择分类'
+    if (!form.title.trim() || form.title.length < 10) e.title = 'Title must be at least 10 characters'
+    if (!form.description.trim() || form.description.length < 20) e.description = 'Description must be at least 20 characters'
+    if (!form.category) e.category = 'Please select a category'
     setErrors(e)
     return Object.keys(e).length === 0
   }
 
   const validateStep2 = () => {
     const e: Record<string, string> = {}
-    if (!form.endDate) e.endDate = '请选择截止日期'
-    else if (new Date(form.endDate) <= new Date()) e.endDate = '截止日期必须在未来'
-    if (!form.resolution) e.resolution = '请选择结算来源'
-    if (!form.liquidity || parseFloat(form.liquidity) < 50) e.liquidity = '最低初始流动性为 $50'
+    if (!form.endDate) e.endDate = 'Please select a closing date'
+    else if (new Date(form.endDate) <= new Date()) e.endDate = 'Closing date must be in the future'
+    if (!form.resolution) e.resolution = 'Please select a resolution source'
+    if (!form.liquidity || parseFloat(form.liquidity) < 50) e.liquidity = 'Minimum initial liquidity is $50'
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -85,7 +85,7 @@ export default function CreateMarketPage() {
       setDone(true)
       setTimeout(() => router.push('/'), 2000)
     } catch {
-      setSubmitError('创建失败，请重试')
+      setSubmitError('Creation failed, please try again')
     } finally {
       setIsSubmitting(false)
     }
@@ -96,9 +96,9 @@ export default function CreateMarketPage() {
       <>
         <div className="max-w-7xl mx-auto px-4 py-20 text-center">
           <PlusCircle className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">创建预测市场</h2>
-          <p className="text-gray-400 mb-6">登录后即可创建你自己的预测市场</p>
-          <Button onClick={openLoginModal}>登录 / 注册</Button>
+          <h2 className="text-xl font-bold text-white mb-2">Create a Prediction Market</h2>
+          <p className="text-gray-400 mb-6">Sign in to create your own prediction market</p>
+          <Button onClick={openLoginModal}>Sign In / Register</Button>
         </div>
         <LoginModal open={isLoginModalOpen} onClose={closeLoginModal} />
       </>
@@ -109,13 +109,13 @@ export default function CreateMarketPage() {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
         <CheckCircle className="w-14 h-14 text-emerald-400 mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-white mb-2">市场创建成功！</h2>
-        <p className="text-gray-400">正在跳转到首页...</p>
+        <h2 className="text-xl font-bold text-white mb-2">Market created successfully!</h2>
+        <p className="text-gray-400">Redirecting to home...</p>
       </div>
     )
   }
 
-  const stepLabels = ['基本信息', '规则设置', '确认发布']
+  const stepLabels = ['Basic Info', 'Rules', 'Review & Publish']
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -124,8 +124,8 @@ export default function CreateMarketPage() {
           <PlusCircle className="w-5 h-5 text-blue-400" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-white">创建预测市场</h1>
-          <p className="text-gray-400 text-sm">赚取交易手续费的50%</p>
+          <h1 className="text-2xl font-bold text-white">Create a Prediction Market</h1>
+          <p className="text-gray-400 text-sm">Earn 50% of trading fees from your market</p>
         </div>
       </div>
 
@@ -149,33 +149,33 @@ export default function CreateMarketPage() {
         {/* Step 1 */}
         {step === 1 && (
           <div className="space-y-5">
-            <h2 className="text-lg font-semibold text-white">基本信息</h2>
+            <h2 className="text-lg font-semibold text-white">Basic Info</h2>
             <div>
-              <label className="text-sm text-gray-400 mb-1.5 block">市场问题 *</label>
+              <label className="text-sm text-gray-400 mb-1.5 block">Market question *</label>
               <Input
-                placeholder="例：Bitcoin在2024年底前会超过10万美元吗？"
+                placeholder="e.g. Will Bitcoin exceed $100,000 before end of 2024?"
                 value={form.title}
                 onChange={e => update('title', e.target.value)}
                 className={errors.title ? 'border-red-500' : ''}
               />
               {errors.title && <p className="text-red-400 text-xs mt-1">{errors.title}</p>}
-              <p className="text-xs text-gray-600 mt-1">{form.title.length}/200字符</p>
+              <p className="text-xs text-gray-600 mt-1">{form.title.length}/200 characters</p>
             </div>
             <div>
-              <label className="text-sm text-gray-400 mb-1.5 block">市场描述 *</label>
+              <label className="text-sm text-gray-400 mb-1.5 block">Description *</label>
               <textarea
                 className={cn(
                   'w-full h-28 px-3 py-2 rounded-lg border bg-gray-800 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none',
                   errors.description ? 'border-red-500' : 'border-gray-700'
                 )}
-                placeholder="详细描述市场规则、结算条件和数据来源..."
+                placeholder="Describe the resolution criteria, data source, and any edge cases..."
                 value={form.description}
                 onChange={e => update('description', e.target.value)}
               />
               {errors.description && <p className="text-red-400 text-xs mt-1">{errors.description}</p>}
             </div>
             <div>
-              <label className="text-sm text-gray-400 mb-2 block">分类 *</label>
+              <label className="text-sm text-gray-400 mb-2 block">Category *</label>
               <div className="flex flex-wrap gap-2">
                 {categories.map(cat => (
                   <button
@@ -193,7 +193,7 @@ export default function CreateMarketPage() {
               {errors.category && <p className="text-red-400 text-xs mt-1">{errors.category}</p>}
             </div>
             <div>
-              <label className="text-sm text-gray-400 mb-1.5 block">标签 (逗号分隔)</label>
+              <label className="text-sm text-gray-400 mb-1.5 block">Tags (comma-separated)</label>
               <Input placeholder="Bitcoin, Price, ATH" value={form.tags} onChange={e => update('tags', e.target.value)} />
             </div>
           </div>
@@ -202,9 +202,9 @@ export default function CreateMarketPage() {
         {/* Step 2 */}
         {step === 2 && (
           <div className="space-y-5">
-            <h2 className="text-lg font-semibold text-white">规则设置</h2>
+            <h2 className="text-lg font-semibold text-white">Rules</h2>
             <div>
-              <label className="text-sm text-gray-400 mb-1.5 block">截止日期 *</label>
+              <label className="text-sm text-gray-400 mb-1.5 block">Closing date *</label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <Input
@@ -218,19 +218,19 @@ export default function CreateMarketPage() {
               {errors.endDate && <p className="text-red-400 text-xs mt-1">{errors.endDate}</p>}
             </div>
             <div>
-              <label className="text-sm text-gray-400 mb-1.5 block">结算来源 *</label>
+              <label className="text-sm text-gray-400 mb-1.5 block">Resolution source *</label>
               <select
                 className={cn('w-full h-10 px-3 rounded-lg border bg-gray-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500', errors.resolution ? 'border-red-500' : 'border-gray-700')}
                 value={form.resolution}
                 onChange={e => update('resolution', e.target.value)}
               >
-                <option value="">选择结算来源</option>
+                <option value="">Select resolution source</option>
                 {resolutionSources.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
               {errors.resolution && <p className="text-red-400 text-xs mt-1">{errors.resolution}</p>}
             </div>
             <div>
-              <label className="text-sm text-gray-400 mb-1.5 block">初始流动性 (USDC) *</label>
+              <label className="text-sm text-gray-400 mb-1.5 block">Initial liquidity (USDC) *</label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <Input
@@ -242,11 +242,11 @@ export default function CreateMarketPage() {
                 />
               </div>
               {errors.liquidity && <p className="text-red-400 text-xs mt-1">{errors.liquidity}</p>}
-              <p className="text-xs text-gray-600 mt-1">你将获得该市场手续费收入的50%</p>
+              <p className="text-xs text-gray-600 mt-1">You will earn 50% of all trading fees from this market</p>
             </div>
             <div className="flex items-start gap-2 rounded-lg bg-blue-500/10 border border-blue-500/20 p-3">
               <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-              <p className="text-xs text-blue-300">市场创建后将经过平台审核（约24小时），审核通过后自动上线。初始流动性将从你的余额中扣除。</p>
+              <p className="text-xs text-blue-300">Markets undergo a platform review (approximately 24 hours) before going live. Initial liquidity will be deducted from your balance.</p>
             </div>
           </div>
         )}
@@ -254,36 +254,36 @@ export default function CreateMarketPage() {
         {/* Step 3 */}
         {step === 3 && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-white">确认发布</h2>
+            <h2 className="text-lg font-semibold text-white">Review &amp; Publish</h2>
             <div className="rounded-lg bg-gray-800/60 p-4 space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">市场问题</span>
+                <span className="text-gray-500">Question</span>
                 <span className="text-white text-right max-w-xs">{form.title}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">分类</span>
+                <span className="text-gray-500">Category</span>
                 <span className="text-white">{form.category}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">截止日期</span>
+                <span className="text-gray-500">Closing date</span>
                 <span className="text-white">{form.endDate}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">结算来源</span>
+                <span className="text-gray-500">Resolution source</span>
                 <span className="text-white">{form.resolution}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">初始流动性</span>
+                <span className="text-gray-500">Initial liquidity</span>
                 <span className="text-white">${form.liquidity}</span>
               </div>
               <div className="border-t border-gray-700 pt-3 flex justify-between font-medium">
-                <span className="text-gray-400">创建费用</span>
-                <span className="text-white">$0 (免费)</span>
+                <span className="text-gray-400">Creation fee</span>
+                <span className="text-white">$0 (free)</span>
               </div>
             </div>
             <div className="flex items-start gap-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3">
               <Info className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
-              <p className="text-xs text-yellow-300">发布后无法修改市场内容。请确认所有信息正确无误。</p>
+              <p className="text-xs text-yellow-300">Market content cannot be modified after publishing. Please review all details carefully.</p>
             </div>
           </div>
         )}
@@ -297,16 +297,16 @@ export default function CreateMarketPage() {
         <div className="flex gap-3 mt-6">
           {step > 1 && (
             <Button variant="outline" onClick={() => setStep(s => s - 1)} className="flex-1">
-              上一步
+              Back
             </Button>
           )}
           {step < 3 ? (
             <Button onClick={handleNext} className="flex-1">
-              下一步
+              Next
             </Button>
           ) : (
             <Button onClick={handleSubmit} className="flex-1" disabled={isSubmitting}>
-              {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />发布中...</> : '确认发布'}
+              {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Publishing...</> : 'Publish Market'}
             </Button>
           )}
         </div>

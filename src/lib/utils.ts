@@ -20,16 +20,16 @@ export function formatPercent(num: number): string {
 }
 
 export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' })
+  return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 export function timeUntil(dateStr: string): string {
   const diff = new Date(dateStr).getTime() - Date.now()
-  if (diff < 0) return '已结束'
+  if (diff < 0) return 'Ended'
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  if (days > 30) return `${Math.floor(days / 30)}个月后`
-  if (days > 0) return `${days}天后`
-  return '今天结束'
+  if (days > 30) return `${Math.floor(days / 30)}mo`
+  if (days > 0) return `${days}d`
+  return 'Ends today'
 }
 
 export function getCategoryColor(category: string): string {

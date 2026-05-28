@@ -34,7 +34,7 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
               </button>
             </div>
           ) : (
-            <Dialog.Title className="sr-only">对话框</Dialog.Title>
+            <Dialog.Title className="sr-only">Dialog</Dialog.Title>
           )}
           {children}
         </Dialog.Content>

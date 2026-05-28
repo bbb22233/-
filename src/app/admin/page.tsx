@@ -211,9 +211,9 @@ export default function AdminPage() {
         headers,
         body: JSON.stringify({ key: 'depositAddress', value: depositAddress }),
       })
-      setSaveAddressMsg(res.ok ? '保存成功' : '保存失败')
+      setSaveAddressMsg(res.ok ? 'Saved' : 'Save failed')
     } catch {
-      setSaveAddressMsg('网络错误')
+      setSaveAddressMsg('Network error')
     } finally {
       setSavingAddress(false)
       setTimeout(() => setSaveAddressMsg(''), 3000)
@@ -229,13 +229,13 @@ export default function AdminPage() {
       })
       const data = await res.json()
       if (res.ok) {
-        setActionMsg(prev => ({ ...prev, [id]: action === 'approve' ? '已批准' : '已拒绝' }))
+        setActionMsg(prev => ({ ...prev, [id]: action === 'approve' ? 'Approved' : 'Rejected' }))
         loadPendingRequests()
       } else {
-        setActionMsg(prev => ({ ...prev, [id]: data.error ?? '操作失败' }))
+        setActionMsg(prev => ({ ...prev, [id]: data.error ?? 'Action failed' }))
       }
     } catch {
-      setActionMsg(prev => ({ ...prev, [id]: '网络错误' }))
+      setActionMsg(prev => ({ ...prev, [id]: 'Network error' }))
     }
     setTimeout(() => setActionMsg(prev => { const n = { ...prev }; delete n[id]; return n }), 3000)
   }
@@ -255,7 +255,7 @@ export default function AdminPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('确认删除此市场？')) return
+    if (!confirm('Delete this market? This cannot be undone.')) return
     await fetch('/api/admin/markets', { method: 'DELETE', headers, body: JSON.stringify({ id }) })
     loadMarkets()
   }
@@ -341,19 +341,19 @@ export default function AdminPage() {
               <Shield className="w-5 h-5 text-red-400" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">管理员后台</h1>
+              <h1 className="text-xl font-bold text-white">Admin Panel</h1>
               <p className="text-xs text-gray-500">CryptoPredict Admin</p>
             </div>
           </div>
           <Input
             type="password"
-            placeholder="管理员密码"
+            placeholder="Admin password"
             value={password}
             onChange={e => setPassword(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleLogin()}
             className="mb-3"
           />
-          <Button className="w-full" onClick={handleLogin}>登录</Button>
+          <Button className="w-full" onClick={handleLogin}>Sign In</Button>
         </div>
       </div>
     )
@@ -369,7 +369,7 @@ export default function AdminPage() {
             <Shield className="w-5 h-5 text-red-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">管理员后台</h1>
+            <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
             <p className="text-xs text-gray-500">CryptoPredict Admin Panel</p>
           </div>
         </div>
@@ -379,11 +379,11 @@ export default function AdminPage() {
       <div className="flex gap-1 mb-8 flex-wrap">
         {(
           [
-            { id: 'overview', label: '概览' },
-            { id: 'markets', label: '市场管理' },
-            { id: 'deposits', label: `充提审核 (${pendingDeposits.length + pendingWithdrawals.length})` },
-            { id: 'users', label: '用户管理' },
-            { id: 'support', label: '客服设置' },
+            { id: 'overview', label: 'Overview' },
+            { id: 'markets', label: 'Markets' },
+            { id: 'deposits', label: `Deposits & Withdrawals (${pendingDeposits.length + pendingWithdrawals.length})` },
+            { id: 'users', label: 'Users' },
+            { id: 'support', label: 'Support Settings' },
           ] as { id: TabId; label: string }[]
         ).map(tab => (
           <button
@@ -401,14 +401,14 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* ====== Tab: 概览 ====== */}
+      {/* ====== Tab: Overview ====== */}
       {activeTab === 'overview' && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-white">平台概览</h2>
+            <h2 className="text-base font-semibold text-white">Platform Overview</h2>
             <Button variant="outline" size="sm" onClick={loadStats} disabled={statsLoading}>
               <RefreshCw className={cn('w-3.5 h-3.5 mr-1.5', statsLoading && 'animate-spin')} />
-              刷新
+              Refresh
             </Button>
           </div>
           {statsLoading || !stats ? (
@@ -422,28 +422,28 @@ export default function AdminPage() {
                 <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
                   <div className="flex items-center gap-2 mb-2">
                     <Users className="w-4 h-4 text-blue-400" />
-                    <span className="text-xs text-gray-500">总用户数</span>
+                    <span className="text-xs text-gray-500">Total Users</span>
                   </div>
                   <p className="text-2xl font-bold text-white">{stats.totalUsers}</p>
                 </div>
                 <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
                   <div className="flex items-center gap-2 mb-2">
                     <BarChart2 className="w-4 h-4 text-emerald-400" />
-                    <span className="text-xs text-gray-500">活跃市场</span>
+                    <span className="text-xs text-gray-500">Active Markets</span>
                   </div>
                   <p className="text-2xl font-bold text-emerald-400">{stats.activeMarkets}</p>
                 </div>
                 <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
                   <div className="flex items-center gap-2 mb-2">
                     <TrendingUp className="w-4 h-4 text-purple-400" />
-                    <span className="text-xs text-gray-500">总交易量</span>
+                    <span className="text-xs text-gray-500">Total Volume</span>
                   </div>
                   <p className="text-2xl font-bold text-purple-400">{formatCurrency(stats.totalVolume)}</p>
                 </div>
                 <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
                   <div className="flex items-center gap-2 mb-2">
                     <DollarSign className="w-4 h-4 text-yellow-400" />
-                    <span className="text-xs text-gray-500">平台手续费</span>
+                    <span className="text-xs text-gray-500">Platform Fees</span>
                   </div>
                   <p className="text-2xl font-bold text-yellow-400">{formatCurrency(stats.totalFees)}</p>
                 </div>
@@ -453,28 +453,28 @@ export default function AdminPage() {
                 <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
                   <div className="flex items-center gap-2 mb-2">
                     <ArrowDownCircle className="w-4 h-4 text-emerald-400" />
-                    <span className="text-xs text-gray-500">累计充值</span>
+                    <span className="text-xs text-gray-500">Total Deposited</span>
                   </div>
                   <p className="text-2xl font-bold text-emerald-400">{formatCurrency(stats.totalDeposited)}</p>
                 </div>
                 <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
                   <div className="flex items-center gap-2 mb-2">
                     <ArrowUpCircle className="w-4 h-4 text-red-400" />
-                    <span className="text-xs text-gray-500">累计提款</span>
+                    <span className="text-xs text-gray-500">Total Withdrawn</span>
                   </div>
                   <p className="text-2xl font-bold text-red-400">{formatCurrency(stats.totalWithdrawn)}</p>
                 </div>
                 <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
                   <div className="flex items-center gap-2 mb-2">
                     <Clock className="w-4 h-4 text-orange-400" />
-                    <span className="text-xs text-gray-500">待审核充值</span>
+                    <span className="text-xs text-gray-500">Pending Deposits</span>
                   </div>
                   <p className="text-2xl font-bold text-orange-400">{stats.pendingDeposits}</p>
                 </div>
                 <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
                   <div className="flex items-center gap-2 mb-2">
                     <Clock className="w-4 h-4 text-orange-400" />
-                    <span className="text-xs text-gray-500">待审核提款</span>
+                    <span className="text-xs text-gray-500">Pending Withdrawals</span>
                   </div>
                   <p className="text-2xl font-bold text-orange-400">{stats.pendingWithdrawals}</p>
                 </div>
@@ -484,7 +484,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* ====== Tab: 市场管理 ====== */}
+      {/* ====== Tab: Markets ====== */}
       {activeTab === 'markets' && (
         <div>
           <div className="flex items-center justify-between mb-4">
@@ -493,22 +493,22 @@ export default function AdminPage() {
                 <button key={s} onClick={() => setStatusFilter(s)}
                   className={cn('px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
                     statusFilter === s ? 'bg-blue-600 text-white' : 'bg-gray-900 border border-gray-800 text-gray-400 hover:text-white')}>
-                  {s === 'all' ? '全部' : s === 'active' ? '活跃' : s === 'pending' ? '待审核' : '已结算'}
+                  {s === 'all' ? 'All' : s === 'active' ? 'Active' : s === 'pending' ? 'Pending' : 'Resolved'}
                 </button>
               ))}
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={loadMarkets} disabled={loading}>
                 <RefreshCw className={cn('w-3.5 h-3.5 mr-1.5', loading && 'animate-spin')} />
-                刷新
+                Refresh
               </Button>
               <Button size="sm" onClick={handleSync} disabled={syncing} className="bg-purple-600 hover:bg-purple-700">
                 {syncing ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Globe className="w-3.5 h-3.5 mr-1.5" />}
-                同步 Polymarket
+                Sync Polymarket
               </Button>
               <Button size="sm" onClick={() => setShowCreateForm(v => !v)}>
                 <Plus className="w-3.5 h-3.5 mr-1.5" />
-                创建市场
+                Create Market
               </Button>
             </div>
           </div>
@@ -517,54 +517,54 @@ export default function AdminPage() {
             <div className={cn('rounded-xl border p-4 mb-4 flex items-center gap-3',
               syncResult.errors === 0 ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-yellow-500/30 bg-yellow-500/5')}>
               {syncResult.errors === 0 ? <CheckCircle className="w-5 h-5 text-emerald-400" /> : <AlertTriangle className="w-5 h-5 text-yellow-400" />}
-              <p className="text-sm text-white">同步完成：新增/更新 <span className="text-emerald-400 font-bold">{syncResult.synced}</span> 个市场，失败 <span className="text-red-400">{syncResult.errors}</span> 个</p>
+              <p className="text-sm text-white">Sync complete: <span className="text-emerald-400 font-bold">{syncResult.synced}</span> markets added/updated, <span className="text-red-400">{syncResult.errors}</span> failed</p>
             </div>
           )}
 
           {showCreateForm && (
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-6 mb-6 space-y-4">
-              <h2 className="text-base font-semibold text-white">手动创建市场</h2>
+              <h2 className="text-base font-semibold text-white">Create Market Manually</h2>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">市场问题 *</label>
-                <Input placeholder="会发生...吗？" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+                <label className="text-xs text-gray-500 mb-1 block">Market question *</label>
+                <Input placeholder="Will ... happen?" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">详细描述 *</label>
+                <label className="text-xs text-gray-500 mb-1 block">Description *</label>
                 <textarea className="w-full h-24 px-3 py-2 rounded-lg border border-gray-700 bg-gray-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                  placeholder="结算条件、数据来源..."
+                  placeholder="Resolution criteria, data source..."
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">分类 *</label>
+                  <label className="text-xs text-gray-500 mb-1 block">Category *</label>
                   <select className="w-full h-10 px-3 rounded-lg border border-gray-700 bg-gray-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
                     {categories.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">截止日期 *</label>
+                  <label className="text-xs text-gray-500 mb-1 block">Closing date *</label>
                   <Input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} min={new Date().toISOString().split('T')[0]} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">初始流动性 (USDC)</label>
+                  <label className="text-xs text-gray-500 mb-1 block">Initial liquidity (USDC)</label>
                   <Input type="number" value={form.liquidity} onChange={e => setForm(f => ({ ...f, liquidity: e.target.value }))} min={10} />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">标签 (逗号分隔)</label>
+                  <label className="text-xs text-gray-500 mb-1 block">Tags (comma-separated)</label>
                   <Input placeholder="Tag1, Tag2" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} />
                 </div>
               </div>
               {createSuccess && (
                 <div className="flex items-center gap-2 text-emerald-400 text-sm">
-                  <CheckCircle className="w-4 h-4" /> 市场创建成功！
+                  <CheckCircle className="w-4 h-4" /> Market created successfully!
                 </div>
               )}
               <Button onClick={handleCreate} disabled={creating} className="w-full">
-                {creating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />创建中...</> : <><Plus className="w-4 h-4 mr-2" />创建市场</>}
+                {creating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating...</> : <><Plus className="w-4 h-4 mr-2" />Create Market</>}
               </Button>
             </div>
           )}
@@ -573,12 +573,12 @@ export default function AdminPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-800 bg-gray-900/60">
-                  <th className="text-left px-4 py-3 text-xs text-gray-500">市场</th>
-                  <th className="text-left px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">分类</th>
-                  <th className="text-center px-4 py-3 text-xs text-gray-500 hidden sm:table-cell">状态</th>
+                  <th className="text-left px-4 py-3 text-xs text-gray-500">Market</th>
+                  <th className="text-left px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">Category</th>
+                  <th className="text-center px-4 py-3 text-xs text-gray-500 hidden sm:table-cell">Status</th>
                   <th className="text-right px-4 py-3 text-xs text-gray-500 hidden md:table-cell">YES/NO</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500 hidden md:table-cell">交易量</th>
-                  <th className="text-right px-4 py-3 text-xs text-gray-500">操作</th>
+                  <th className="text-right px-4 py-3 text-xs text-gray-500 hidden md:table-cell">Volume</th>
+                  <th className="text-right px-4 py-3 text-xs text-gray-500">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -595,7 +595,7 @@ export default function AdminPage() {
                     </td>
                     <td className="px-4 py-3.5 text-center hidden sm:table-cell">
                       <Badge variant={market.status === 'active' ? 'success' : market.status === 'resolved' ? 'secondary' : 'warning'}>
-                        {market.status === 'active' ? '活跃' : market.status === 'resolved' ? '已结算' : '待审核'}
+                        {market.status === 'active' ? 'Active' : market.status === 'resolved' ? 'Resolved' : 'Pending'}
                       </Badge>
                     </td>
                     <td className="px-4 py-3.5 text-right hidden md:table-cell">
@@ -609,7 +609,7 @@ export default function AdminPage() {
                         {market.status === 'active' && (
                           <button onClick={() => setSettleModal(market)}
                             className="px-2 py-1 rounded text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 transition-colors whitespace-nowrap">
-                            结算
+                            Settle
                           </button>
                         )}
                         {market.status === 'resolved' && (
@@ -630,52 +630,52 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* ====== Tab: 充提审核 ====== */}
+      {/* ====== Tab: Deposits & Withdrawals ====== */}
       {activeTab === 'deposits' && (
         <div className="space-y-8">
           {/* Deposit address setting */}
           <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
             <h2 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
               <Wallet className="w-4 h-4 text-blue-400" />
-              充值地址设置
+              Deposit Address
             </h2>
             <div className="flex gap-3">
               <Input
-                placeholder="输入充值钱包地址（0x...）"
+                placeholder="Enter deposit wallet address (0x...)"
                 value={depositAddress}
                 onChange={e => setDepositAddress(e.target.value)}
                 className="flex-1"
               />
               <Button onClick={handleSaveAddress} disabled={savingAddress}>
-                {savingAddress ? <Loader2 className="w-4 h-4 animate-spin" /> : '保存'}
+                {savingAddress ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
               </Button>
             </div>
             {saveAddressMsg && (
-              <p className={cn('text-xs mt-2', saveAddressMsg === '保存成功' ? 'text-emerald-400' : 'text-red-400')}>{saveAddressMsg}</p>
+              <p className={cn('text-xs mt-2', saveAddressMsg === 'Saved' ? 'text-emerald-400' : 'text-red-400')}>{saveAddressMsg}</p>
             )}
           </div>
 
           {/* Pending deposits */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-semibold text-white">待审核充值 ({pendingDeposits.length})</h2>
+              <h2 className="text-base font-semibold text-white">Pending Deposits ({pendingDeposits.length})</h2>
               <Button variant="outline" size="sm" onClick={loadPendingRequests} disabled={requestsLoading}>
                 <RefreshCw className={cn('w-3.5 h-3.5 mr-1.5', requestsLoading && 'animate-spin')} />
-                刷新
+                Refresh
               </Button>
             </div>
             {pendingDeposits.length === 0 ? (
-              <div className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-8 text-center text-sm text-gray-500">暂无待审核充值</div>
+              <div className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-8 text-center text-sm text-gray-500">No pending deposits</div>
             ) : (
               <div className="rounded-xl border border-gray-800 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-800 bg-gray-900/60">
-                      <th className="text-left px-4 py-3 text-xs text-gray-500">用户</th>
-                      <th className="text-right px-4 py-3 text-xs text-gray-500">金额</th>
-                      <th className="text-left px-4 py-3 text-xs text-gray-500 hidden md:table-cell">交易Hash</th>
-                      <th className="text-left px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">时间</th>
-                      <th className="text-right px-4 py-3 text-xs text-gray-500">操作</th>
+                      <th className="text-left px-4 py-3 text-xs text-gray-500">User</th>
+                      <th className="text-right px-4 py-3 text-xs text-gray-500">Amount</th>
+                      <th className="text-left px-4 py-3 text-xs text-gray-500 hidden md:table-cell">Tx Hash</th>
+                      <th className="text-left px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">Date</th>
+                      <th className="text-right px-4 py-3 text-xs text-gray-500">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -700,11 +700,11 @@ export default function AdminPage() {
                               <>
                                 <button onClick={() => handleRequestAction(req.id, 'deposit', 'approve')}
                                   className="px-2 py-1 rounded text-xs bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 transition-colors">
-                                  批准
+                                  Approve
                                 </button>
                                 <button onClick={() => handleRequestAction(req.id, 'deposit', 'reject')}
                                   className="px-2 py-1 rounded text-xs bg-red-600/20 text-red-400 hover:bg-red-600/40 transition-colors">
-                                  拒绝
+                                  Reject
                                 </button>
                               </>
                             )}
@@ -720,19 +720,19 @@ export default function AdminPage() {
 
           {/* Pending withdrawals */}
           <div>
-            <h2 className="text-base font-semibold text-white mb-3">待审核提款 ({pendingWithdrawals.length})</h2>
+            <h2 className="text-base font-semibold text-white mb-3">Pending Withdrawals ({pendingWithdrawals.length})</h2>
             {pendingWithdrawals.length === 0 ? (
-              <div className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-8 text-center text-sm text-gray-500">暂无待审核提款</div>
+              <div className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-8 text-center text-sm text-gray-500">No pending withdrawals</div>
             ) : (
               <div className="rounded-xl border border-gray-800 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-800 bg-gray-900/60">
-                      <th className="text-left px-4 py-3 text-xs text-gray-500">用户</th>
-                      <th className="text-right px-4 py-3 text-xs text-gray-500">金额</th>
-                      <th className="text-left px-4 py-3 text-xs text-gray-500 hidden md:table-cell">提现地址</th>
-                      <th className="text-left px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">时间</th>
-                      <th className="text-right px-4 py-3 text-xs text-gray-500">操作</th>
+                      <th className="text-left px-4 py-3 text-xs text-gray-500">User</th>
+                      <th className="text-right px-4 py-3 text-xs text-gray-500">Amount</th>
+                      <th className="text-left px-4 py-3 text-xs text-gray-500 hidden md:table-cell">To Address</th>
+                      <th className="text-left px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">Date</th>
+                      <th className="text-right px-4 py-3 text-xs text-gray-500">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -757,11 +757,11 @@ export default function AdminPage() {
                               <>
                                 <button onClick={() => handleRequestAction(req.id, 'withdrawal', 'approve')}
                                   className="px-2 py-1 rounded text-xs bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 transition-colors">
-                                  批准
+                                  Approve
                                 </button>
                                 <button onClick={() => handleRequestAction(req.id, 'withdrawal', 'reject')}
                                   className="px-2 py-1 rounded text-xs bg-red-600/20 text-red-400 hover:bg-red-600/40 transition-colors">
-                                  拒绝
+                                  Reject
                                 </button>
                               </>
                             )}
@@ -777,14 +777,14 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* ====== Tab: 用户管理 ====== */}
+      {/* ====== Tab: Users ====== */}
       {activeTab === 'users' && (
         <div>
           <div className="flex items-center gap-3 mb-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <Input
-                placeholder="搜索邮箱或用户名..."
+                placeholder="Search email or username..."
                 value={userSearch}
                 onChange={e => {
                   setUserSearch(e.target.value)
@@ -795,7 +795,7 @@ export default function AdminPage() {
             </div>
             <Button variant="outline" size="sm" onClick={() => loadUsers(userSearch)} disabled={usersLoading}>
               <RefreshCw className={cn('w-3.5 h-3.5 mr-1.5', usersLoading && 'animate-spin')} />
-              刷新
+              Refresh
             </Button>
           </div>
 
@@ -808,13 +808,13 @@ export default function AdminPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-800 bg-gray-900/60">
-                    <th className="text-left px-4 py-3 text-xs text-gray-500">用户名</th>
-                    <th className="text-left px-4 py-3 text-xs text-gray-500 hidden md:table-cell">邮箱</th>
-                    <th className="text-right px-4 py-3 text-xs text-gray-500">余额</th>
-                    <th className="text-right px-4 py-3 text-xs text-gray-500 hidden sm:table-cell">盈亏</th>
-                    <th className="text-right px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">交易数</th>
-                    <th className="text-left px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">注册时间</th>
-                    <th className="text-right px-4 py-3 text-xs text-gray-500">操作</th>
+                    <th className="text-left px-4 py-3 text-xs text-gray-500">Username</th>
+                    <th className="text-left px-4 py-3 text-xs text-gray-500 hidden md:table-cell">Email</th>
+                    <th className="text-right px-4 py-3 text-xs text-gray-500">Balance</th>
+                    <th className="text-right px-4 py-3 text-xs text-gray-500 hidden sm:table-cell">P&L</th>
+                    <th className="text-right px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">Trades</th>
+                    <th className="text-left px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">Joined</th>
+                    <th className="text-right px-4 py-3 text-xs text-gray-500">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -854,13 +854,13 @@ export default function AdminPage() {
                                 disabled={savingBalance[user.id]}
                                 className="px-2 py-1 rounded text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 transition-colors"
                               >
-                                {savingBalance[user.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : '保存'}
+                                {savingBalance[user.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save'}
                               </button>
                               <button
                                 onClick={() => setEditingBalance(prev => { const n = { ...prev }; delete n[user.id]; return n })}
                                 className="px-2 py-1 rounded text-xs text-gray-500 hover:text-gray-300 transition-colors"
                               >
-                                取消
+                                Cancel
                               </button>
                             </>
                           ) : (
@@ -868,7 +868,7 @@ export default function AdminPage() {
                               onClick={() => setEditingBalance(prev => ({ ...prev, [user.id]: String(user.balance) }))}
                               className="px-2 py-1 rounded text-xs bg-gray-800 text-gray-400 hover:text-white transition-colors"
                             >
-                              调整余额
+                              Adjust Balance
                             </button>
                           )}
                         </div>
@@ -877,7 +877,7 @@ export default function AdminPage() {
                   ))}
                   {users.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">暂无用户</td>
+                      <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">No users found</td>
                     </tr>
                   )}
                 </tbody>
@@ -887,19 +887,19 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* ====== Tab: 客服设置 ====== */}
+      {/* ====== Tab: Support Settings ====== */}
       {activeTab === 'support' && (
         <div className="max-w-2xl">
           <div className="mb-6">
-            <h2 className="text-base font-semibold text-white">客服渠道设置</h2>
-            <p className="text-xs text-gray-500 mt-1">配置后用户可在个人资料页看到客服入口</p>
+            <h2 className="text-base font-semibold text-white">Support Channels</h2>
+            <p className="text-xs text-gray-500 mt-1">Once configured, users will see these channels on their profile page</p>
           </div>
           <div className="rounded-xl border border-gray-800 bg-gray-900 divide-y divide-gray-800">
             {[
               { key: 'supportWhatsapp', label: 'WhatsApp', iconColor: 'text-green-400', bgColor: 'bg-green-400/10' },
               { key: 'supportTelegram', label: 'Telegram', iconColor: 'text-blue-400', bgColor: 'bg-blue-400/10' },
               { key: 'supportDiscord', label: 'Discord', iconColor: 'text-indigo-400', bgColor: 'bg-indigo-400/10' },
-              { key: 'supportWechat', label: '微信客服二维码链接', iconColor: 'text-green-400', bgColor: 'bg-green-400/10' },
+              { key: 'supportWechat', label: 'WeChat QR Link', iconColor: 'text-green-400', bgColor: 'bg-green-400/10' },
             ].map(({ key, label, iconColor, bgColor }) => (
               <div key={key} className="p-5 flex items-center gap-4">
                 <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0', bgColor)}>
@@ -908,7 +908,7 @@ export default function AdminPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-white mb-1.5">{label}</p>
                   <Input
-                    placeholder={`输入 ${label} 链接或地址`}
+                    placeholder={`Enter ${label} link or address`}
                     value={supportSettings[key] ?? ''}
                     onChange={e => setSupportSettings(prev => ({ ...prev, [key]: e.target.value }))}
                   />
@@ -922,10 +922,10 @@ export default function AdminPage() {
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : savedSupport[key] ? (
                     <span className="flex items-center gap-1 text-emerald-400">
-                      <CheckCircle2 className="w-4 h-4" />已保存
+                      <CheckCircle2 className="w-4 h-4" />Saved
                     </span>
                   ) : (
-                    '保存'
+                    'Save'
                   )}
                 </button>
               </div>
@@ -938,21 +938,21 @@ export default function AdminPage() {
       {settleModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-md rounded-2xl border border-gray-800 bg-gray-950 p-6">
-            <h3 className="text-lg font-semibold text-white mb-2">结算市场</h3>
+            <h3 className="text-lg font-semibold text-white mb-2">Settle Market</h3>
             <p className="text-sm text-gray-400 mb-6 line-clamp-2">{settleModal.title}</p>
             <div className="flex items-center gap-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 mb-6">
               <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0" />
-              <p className="text-xs text-yellow-300">结算后不可撤销，胜方将自动获得奖金。</p>
+              <p className="text-xs text-yellow-300">Settlement is irreversible. Winners will automatically receive their payouts.</p>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-4">
               <Button variant="yes" size="lg" onClick={() => handleSettle('yes')}>
-                <CheckCircle className="w-4 h-4 mr-2" />YES 胜出
+                <CheckCircle className="w-4 h-4 mr-2" />YES wins
               </Button>
               <Button variant="no" size="lg" onClick={() => handleSettle('no')}>
-                <XCircle className="w-4 h-4 mr-2" />NO 胜出
+                <XCircle className="w-4 h-4 mr-2" />NO wins
               </Button>
             </div>
-            <Button variant="outline" className="w-full" onClick={() => setSettleModal(null)}>取消</Button>
+            <Button variant="outline" className="w-full" onClick={() => setSettleModal(null)}>Cancel</Button>
           </div>
         </div>
       )}

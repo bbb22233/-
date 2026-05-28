@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   try {
     const { email, code } = await req.json()
     if (!email || !code) {
-      return NextResponse.json({ error: '参数缺失' }, { status: 400 })
+      return NextResponse.json({ error: 'Missing parameters' }, { status: 400 })
     }
 
     const record = await prisma.verificationCode.findFirst({
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     })
 
     if (!record) {
-      return NextResponse.json({ error: '验证码错误或已过期' }, { status: 401 })
+      return NextResponse.json({ error: 'Invalid or expired code' }, { status: 401 })
     }
 
     // Mark code as used
@@ -59,6 +59,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(user)
   } catch (e) {
     console.error(e)
-    return NextResponse.json({ error: '服务器错误' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

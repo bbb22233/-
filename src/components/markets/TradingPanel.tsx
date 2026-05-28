@@ -51,7 +51,7 @@ export function TradingPanel({ market, onOpenLogin }: TradingPanelProps) {
       setAmount('')
       setTimeout(() => setSuccess(false), 2500)
     } catch {
-      setTradeError('交易失败，请重试')
+      setTradeError('Trade failed, please try again')
     } finally {
       setIsLoading(false)
     }
@@ -64,9 +64,9 @@ export function TradingPanel({ market, onOpenLogin }: TradingPanelProps) {
           'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-3',
           market.resolvedOutcome === 'yes' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
         )}>
-          市场已结算：{market.resolvedOutcome === 'yes' ? 'YES 胜出' : 'NO 胜出'}
+          Market Resolved: {market.resolvedOutcome === 'yes' ? 'YES wins' : 'NO wins'}
         </div>
-        <p className="text-gray-500 text-sm">此市场已结算，无法继续交易</p>
+        <p className="text-gray-500 text-sm">This market has been resolved and is no longer tradeable</p>
       </div>
     )
   }
@@ -84,7 +84,7 @@ export function TradingPanel({ market, onOpenLogin }: TradingPanelProps) {
               tab === t ? 'text-white border-b-2 border-blue-500 bg-gray-800/50' : 'text-gray-500 hover:text-gray-300'
             )}
           >
-            {t === 'buy' ? '买入' : '卖出'}
+            {t === 'buy' ? 'Buy' : 'Sell'}
           </button>
         ))}
       </div>
@@ -124,7 +124,7 @@ export function TradingPanel({ market, onOpenLogin }: TradingPanelProps) {
 
         {/* Amount input */}
         <div>
-          <label className="text-xs text-gray-500 mb-1.5 block">投入金额 (USDC)</label>
+          <label className="text-xs text-gray-500 mb-1.5 block">Amount (USDC)</label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
             <Input
@@ -153,23 +153,23 @@ export function TradingPanel({ market, onOpenLogin }: TradingPanelProps) {
         {amount && parseFloat(amount) > 0 && (
           <div className="rounded-lg bg-gray-800/60 p-3 space-y-2 text-xs">
             <div className="flex justify-between text-gray-400">
-              <span>预计获得份额</span>
-              <span className="text-white font-medium">{shares} 份</span>
+              <span>Est. shares</span>
+              <span className="text-white font-medium">{shares}</span>
             </div>
             <div className="flex justify-between text-gray-400">
-              <span>当前价格</span>
-              <span className="text-white">{Math.round(price * 100)}¢/份</span>
+              <span>Current price</span>
+              <span className="text-white">{Math.round(price * 100)}¢/share</span>
             </div>
             <div className="flex justify-between text-gray-400">
-              <span>手续费 (2%)</span>
+              <span>Fee (2%)</span>
               <span className="text-white">${fee}</span>
             </div>
             <div className="border-t border-gray-700 pt-2 flex justify-between font-medium">
-              <span className="text-gray-300">总计</span>
+              <span className="text-gray-300">Total</span>
               <span className="text-white">${total.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-gray-400">
-              <span>胜出可得</span>
+              <span>Potential payout</span>
               <span className="text-emerald-400 font-medium">+${(parseFloat(shares) * (1 - 0.02)).toFixed(2)}</span>
             </div>
           </div>
@@ -181,11 +181,11 @@ export function TradingPanel({ market, onOpenLogin }: TradingPanelProps) {
           onClick={() => setShowAdvanced(!showAdvanced)}
         >
           <ChevronDown className={cn('w-3 h-3 transition-transform', showAdvanced && 'rotate-180')} />
-          高级设置
+          Advanced settings
         </button>
         {showAdvanced && (
           <div>
-            <label className="text-xs text-gray-500 mb-1.5 block">最大滑点 (%)</label>
+            <label className="text-xs text-gray-500 mb-1.5 block">Max slippage (%)</label>
             <Input type="number" value={slippage} onChange={e => setSlippage(e.target.value)} className="h-8 text-sm" />
           </div>
         )}
@@ -194,7 +194,7 @@ export function TradingPanel({ market, onOpenLogin }: TradingPanelProps) {
         {user && amount && parseFloat(amount) > user.balance && (
           <div className="flex items-center gap-2 text-xs text-yellow-400 bg-yellow-400/10 rounded-lg px-3 py-2">
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-            余额不足，当前余额 {formatCurrency(user.balance)}
+            Insufficient balance. Available: {formatCurrency(user.balance)}
           </div>
         )}
 
@@ -209,9 +209,9 @@ export function TradingPanel({ market, onOpenLogin }: TradingPanelProps) {
         {/* CTA */}
         {success ? (
           <div className="w-full py-3 rounded-lg bg-emerald-500/20 text-emerald-400 text-sm font-medium text-center space-y-1">
-            <div>交易成功！✓</div>
+            <div>Trade successful! ✓</div>
             <Link href="/portfolio" className="block text-xs text-emerald-300 underline underline-offset-2 hover:text-emerald-200">
-              查看持仓
+              View portfolio
             </Link>
           </div>
         ) : (
@@ -223,18 +223,18 @@ export function TradingPanel({ market, onOpenLogin }: TradingPanelProps) {
             disabled={isLoading || !amount || parseFloat(amount) <= 0}
           >
             {isLoading ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />交易中...</>
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</>
             ) : !user ? (
-              '登录后交易'
+              'Sign In to Trade'
             ) : (
-              `买入 ${outcome.toUpperCase()}`
+              `Buy ${outcome.toUpperCase()}`
             )}
           </Button>
         )}
 
         {user && (
           <p className="text-center text-xs text-gray-600">
-            可用余额：{formatCurrency(user.balance)}
+            Available: {formatCurrency(user.balance)}
           </p>
         )}
       </div>

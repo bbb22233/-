@@ -65,7 +65,7 @@ export function CommentSection({ comments: initial, marketId, onOpenLogin }: Com
 
   return (
     <div className="space-y-4">
-      <h3 className="text-white font-semibold">评论 ({comments.length})</h3>
+      <h3 className="text-white font-semibold">Comments ({comments.length})</h3>
 
       {/* Input */}
       <div className="flex gap-2">
@@ -74,7 +74,7 @@ export function CommentSection({ comments: initial, marketId, onOpenLogin }: Com
         </div>
         <div className="flex-1 flex gap-2">
           <Input
-            placeholder={user ? '发表你的看法...' : '登录后发表评论'}
+            placeholder={user ? 'Share your thoughts...' : 'Sign in to comment'}
             value={text}
             onChange={e => setText(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handlePost()}

@@ -7,8 +7,8 @@ import { BottomNav } from '@/components/layout/BottomNav'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'CryptoPredict — 加密货币预测市场',
-  description: '预测加密货币市场走势，赢取收益',
+  title: 'CryptoPredict — Crypto Prediction Markets',
+  description: 'Predict crypto market outcomes and earn rewards',
 }
 
 export const viewport: Viewport = {
@@ -19,7 +19,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh">
+    <html lang="en">
       <body className={`${inter.className} bg-gray-950 text-white min-h-screen`}>
         <Header />
         <main className="pt-16 pb-14 md:pb-0">

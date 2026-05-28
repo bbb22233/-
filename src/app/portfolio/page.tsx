@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 
 // ── types ──────────────────────────────────────────────────────────────────
-type PnlPeriod = '1天' | '1周' | '1个月' | '1年' | '年初至今' | '全部'
+type PnlPeriod = '1D' | '1W' | '1M' | '1Y' | 'YTD' | 'All'
 type PortfolioTab = 'positions' | 'orders' | 'history'
 
 // ── mock P&L chart data ────────────────────────────────────────────────────
@@ -44,12 +44,12 @@ function ChartTooltip({ active, payload }: { active?: boolean; payload?: { value
 }
 
 const chartDataByPeriod: Record<PnlPeriod, { t: number; v: number }[]> = {
-  '1天':    generateChartData(24),
-  '1周':    generateChartData(7),
-  '1个月':  generateChartData(30),
-  '1年':    generateChartData(52),
-  '年初至今': generateChartData(20),
-  '全部':   generateChartData(60),
+  '1D':  generateChartData(24),
+  '1W':  generateChartData(7),
+  '1M':  generateChartData(30),
+  '1Y':  generateChartData(52),
+  'YTD': generateChartData(20),
+  'All': generateChartData(60),
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -83,15 +83,15 @@ function DepositModal({ open, onClose, user }: { open: boolean; onClose: () => v
 
   const handleConfirm = async () => {
     if (!user) {
-      setError('请先登录')
+      setError('Please sign in first')
       return
     }
     if (!amount || parseFloat(amount) <= 0) {
-      setError('请输入有效金额')
+      setError('Please enter a valid amount')
       return
     }
     if (!txHash.trim()) {
-      setError('请输入交易 Hash')
+      setError('Please enter your transaction hash')
       return
     }
     setError('')
@@ -104,7 +104,7 @@ function DepositModal({ open, onClose, user }: { open: boolean; onClose: () => v
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error ?? '提交失败')
+        setError(data.error ?? 'Submission failed')
         return
       }
       setSuccess(true)
@@ -115,33 +115,33 @@ function DepositModal({ open, onClose, user }: { open: boolean; onClose: () => v
         onClose()
       }, 3000)
     } catch {
-      setError('网络错误，请重试')
+      setError('Network error, please try again')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="充值">
+    <Modal open={open} onClose={onClose} title="Deposit">
       {success ? (
         <div className="flex flex-col items-center gap-3 py-8">
           <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
             <CheckCircle2 className="w-9 h-9 text-emerald-400" />
           </div>
-          <p className="text-white font-semibold text-lg">充值申请已提交</p>
-          <p className="text-gray-400 text-sm text-center">等待管理员审核（通常1-24小时）</p>
+          <p className="text-white font-semibold text-lg">Deposit request submitted</p>
+          <p className="text-gray-400 text-sm text-center">Awaiting admin review (typically 1–24 hours)</p>
         </div>
       ) : (
         <div className="space-y-5">
           {!user && (
             <div className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3">
-              <p className="text-xs text-red-400">请先登录后再充值</p>
+              <p className="text-xs text-red-400">Please sign in before depositing</p>
             </div>
           )}
 
           {/* Coin selector */}
           <div>
-            <p className="text-xs text-gray-500 mb-2 font-medium">选择币种</p>
+            <p className="text-xs text-gray-500 mb-2 font-medium">Select asset</p>
             <div className="flex gap-2">
               {(['USDC', 'USDT'] as const).map(c => (
                 <button
@@ -162,21 +162,21 @@ function DepositModal({ open, onClose, user }: { open: boolean; onClose: () => v
 
           {/* Deposit address */}
           <div className="rounded-xl bg-gray-800/40 border border-gray-700/60 p-4">
-            <p className="text-xs text-gray-500 mb-2">充值地址（{coin} / ERC-20）</p>
+            <p className="text-xs text-gray-500 mb-2">Deposit address ({coin} / ERC-20)</p>
             {depositAddress ? (
               <code className="block text-xs text-gray-300 font-mono bg-gray-900/80 px-3 py-2.5 rounded-lg break-all border border-gray-700/60">
                 {depositAddress}
               </code>
             ) : (
-              <p className="text-xs text-yellow-400/80 bg-yellow-500/5 border border-yellow-500/20 rounded-lg px-3 py-2.5">
-                充值地址加载中，请稍候或联系客服获取地址
+              <p className="text-xs text-blue-300/80 bg-blue-500/5 border border-blue-500/20 rounded-lg px-3 py-2.5">
+                Contact support to get the deposit address for your account.
               </p>
             )}
           </div>
 
           {/* Amount */}
           <div>
-            <p className="text-xs text-gray-500 mb-2 font-medium">充值金额</p>
+            <p className="text-xs text-gray-500 mb-2 font-medium">Deposit amount</p>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm select-none">$</span>
               <Input
@@ -202,9 +202,9 @@ function DepositModal({ open, onClose, user }: { open: boolean; onClose: () => v
 
           {/* TX Hash */}
           <div>
-            <p className="text-xs text-gray-500 mb-2 font-medium">交易 Hash *</p>
+            <p className="text-xs text-gray-500 mb-2 font-medium">Transaction hash *</p>
             <Input
-              placeholder="粘贴您的交易 Hash（0x...）"
+              placeholder="Paste your transaction hash (0x...)"
               value={txHash}
               onChange={e => setTxHash(e.target.value)}
             />
@@ -215,7 +215,7 @@ function DepositModal({ open, onClose, user }: { open: boolean; onClose: () => v
           )}
 
           <Button className="w-full h-11" onClick={handleConfirm} disabled={loading || !user}>
-            {loading ? '提交中...' : '确认充值'}
+            {loading ? 'Submitting...' : 'Confirm Deposit'}
           </Button>
         </div>
       )}
@@ -248,24 +248,24 @@ function WithdrawModal({ open, onClose, user }: { open: boolean; onClose: () => 
 
   const handleConfirm = async () => {
     if (!user) {
-      setError('请先登录')
+      setError('Please sign in first')
       return
     }
     if (!address.trim()) {
-      setError('请输入提现地址')
+      setError('Please enter a withdrawal address')
       return
     }
     const parsedAmount = parseFloat(amount)
     if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) {
-      setError('请输入有效金额')
+      setError('Please enter a valid amount')
       return
     }
     if (parsedAmount > balance) {
-      setError('提现金额超过可用余额')
+      setError('Withdrawal amount exceeds available balance')
       return
     }
     if (hasWithdrawalPassword && !withdrawalPassword.trim()) {
-      setError('请输入提款密码')
+      setError('Please enter your Withdrawal PIN')
       return
     }
     setError('')
@@ -283,7 +283,7 @@ function WithdrawModal({ open, onClose, user }: { open: boolean; onClose: () => 
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error ?? '提交失败')
+        setError(data.error ?? 'Submission failed')
         return
       }
       setSuccess(true)
@@ -295,45 +295,45 @@ function WithdrawModal({ open, onClose, user }: { open: boolean; onClose: () => 
         onClose()
       }, 3000)
     } catch {
-      setError('网络错误，请重试')
+      setError('Network error, please try again')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="提现">
+    <Modal open={open} onClose={onClose} title="Withdraw">
       {success ? (
         <div className="flex flex-col items-center gap-3 py-8">
           <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
             <CheckCircle2 className="w-9 h-9 text-emerald-400" />
           </div>
-          <p className="text-white font-semibold text-lg">提款申请已提交</p>
-          <p className="text-gray-400 text-sm">等待管理员审核</p>
+          <p className="text-white font-semibold text-lg">Withdrawal request submitted</p>
+          <p className="text-gray-400 text-sm">Awaiting admin review</p>
         </div>
       ) : (
         <div className="space-y-5">
           {!user && (
             <div className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3">
-              <p className="text-xs text-red-400">请先登录后再提现</p>
+              <p className="text-xs text-red-400">Please sign in before withdrawing</p>
             </div>
           )}
           <div>
-            <p className="text-xs text-gray-500 mb-2 font-medium">提现地址</p>
+            <p className="text-xs text-gray-500 mb-2 font-medium">Withdrawal address</p>
             <Input
-              placeholder="输入钱包地址（0x...）"
+              placeholder="Enter wallet address (0x...)"
               value={address}
               onChange={e => setAddress(e.target.value)}
             />
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-gray-500 font-medium">提现金额</p>
+              <p className="text-xs text-gray-500 font-medium">Withdrawal amount</p>
               <button
                 className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
                 onClick={() => setAmount(String(balance))}
               >
-                全部提现
+                Max ({formatCurrency(balance)})
               </button>
             </div>
             <div className="relative">
@@ -348,17 +348,17 @@ function WithdrawModal({ open, onClose, user }: { open: boolean; onClose: () => 
             </div>
           </div>
           <div className="rounded-lg bg-gray-800/50 border border-gray-700/60 px-4 py-3 flex items-center justify-between">
-            <span className="text-xs text-gray-500">可用余额</span>
+            <span className="text-xs text-gray-500">Available balance</span>
             <span className="text-sm text-white font-semibold">{formatCurrency(balance)}</span>
           </div>
 
-          {/* Withdrawal password section */}
+          {/* Withdrawal PIN section */}
           {hasWithdrawalPassword === true && (
             <div>
-              <p className="text-xs text-gray-500 mb-2 font-medium">提款密码</p>
+              <p className="text-xs text-gray-500 mb-2 font-medium">Withdrawal PIN</p>
               <Input
                 type="password"
-                placeholder="请输入提款密码"
+                placeholder="Enter your Withdrawal PIN"
                 value={withdrawalPassword}
                 onChange={e => setWithdrawalPassword(e.target.value)}
               />
@@ -366,12 +366,12 @@ function WithdrawModal({ open, onClose, user }: { open: boolean; onClose: () => 
           )}
           {hasWithdrawalPassword === false && (
             <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 px-4 py-2.5">
-              <p className="text-xs text-yellow-400">您尚未设置提款密码，建议前往个人资料页设置</p>
+              <p className="text-xs text-yellow-400">You have not set a Withdrawal PIN. Consider setting one in your profile for extra security.</p>
             </div>
           )}
 
           <div className="rounded-lg bg-yellow-500/5 border border-yellow-500/20 px-4 py-2.5">
-            <p className="text-xs text-yellow-400/80">提现通常在 1-3 个工作日内处理，请确保地址正确。</p>
+            <p className="text-xs text-yellow-400/80">Withdrawals are typically processed within 1–3 business days. Please double-check your address.</p>
           </div>
           {error && (
             <p className="text-xs text-red-400">{error}</p>
@@ -382,7 +382,7 @@ function WithdrawModal({ open, onClose, user }: { open: boolean; onClose: () => 
             onClick={handleConfirm}
             disabled={loading || !user}
           >
-            {loading ? '提交中...' : '确认提现'}
+            {loading ? 'Submitting...' : 'Confirm Withdrawal'}
           </Button>
         </div>
       )}
@@ -421,19 +421,19 @@ function SellModal({
   const estimated = qty * currentPrice
 
   return (
-    <Modal open={open} onClose={onClose} title="卖出仓位">
+    <Modal open={open} onClose={onClose} title="Sell Position">
       {success ? (
         <div className="flex flex-col items-center gap-3 py-8">
           <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
             <CheckCircle2 className="w-9 h-9 text-emerald-400" />
           </div>
-          <p className="text-white font-semibold text-lg">订单已提交</p>
-          <p className="text-gray-400 text-sm">卖出指令已发送</p>
+          <p className="text-white font-semibold text-lg">Order submitted</p>
+          <p className="text-gray-400 text-sm">Sell order has been placed</p>
         </div>
       ) : (
         <div className="space-y-5">
           <div className="p-3.5 rounded-xl bg-gray-800/50 border border-gray-700/60">
-            <p className="text-xs text-gray-500 mb-1.5 font-medium">市场</p>
+            <p className="text-xs text-gray-500 mb-1.5 font-medium">Market</p>
             <p className="text-sm text-white font-semibold leading-snug line-clamp-2">{marketTitle}</p>
             <div className="mt-2.5">
               <Badge variant={outcome === 'yes' ? 'success' : 'danger'} className="text-xs">
@@ -444,12 +444,12 @@ function SellModal({
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-gray-500 font-medium">卖出份数</p>
+              <p className="text-xs text-gray-500 font-medium">Shares to sell</p>
               <button
                 className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
                 onClick={() => setSellShares(String(shares))}
               >
-                全部 ({shares} 份)
+                All ({shares} shares)
               </button>
             </div>
             <Input
@@ -475,21 +475,21 @@ function SellModal({
 
           <div className="rounded-xl bg-gray-800/50 border border-gray-700/60 divide-y divide-gray-700/60">
             <div className="flex items-center justify-between px-4 py-2.5 text-xs">
-              <span className="text-gray-500">当前价格</span>
+              <span className="text-gray-500">Current price</span>
               <span className="text-gray-300 font-medium">{Math.round(currentPrice * 100)}¢</span>
             </div>
             <div className="flex items-center justify-between px-4 py-2.5 text-xs">
-              <span className="text-gray-500">卖出份数</span>
-              <span className="text-gray-300 font-medium">{qty} 份</span>
+              <span className="text-gray-500">Shares to sell</span>
+              <span className="text-gray-300 font-medium">{qty}</span>
             </div>
             <div className="flex items-center justify-between px-4 py-3 text-sm">
-              <span className="text-gray-400 font-medium">预计收入</span>
+              <span className="text-gray-400 font-medium">Estimated proceeds</span>
               <span className="text-white font-bold">{formatCurrency(estimated)}</span>
             </div>
           </div>
 
           <Button variant="no" className="w-full h-11" onClick={handleSell} disabled={qty === 0}>
-            确认卖出
+            Confirm Sell
           </Button>
         </div>
       )}
@@ -501,7 +501,7 @@ function SellModal({
 export default function PortfolioPage() {
   const { user, openLoginModal, isLoginModalOpen, closeLoginModal } = useAuth()
 
-  const [period, setPeriod] = useState<PnlPeriod>('1天')
+  const [period, setPeriod] = useState<PnlPeriod>('1D')
   const [tab, setTab] = useState<PortfolioTab>('positions')
   const [depositOpen, setDepositOpen] = useState(false)
   const [withdrawOpen, setWithdrawOpen] = useState(false)
@@ -513,11 +513,11 @@ export default function PortfolioPage() {
 
   const totalValue = mockPositions.reduce((s, p) => s + p.shares * p.currentPrice, 0)
 
-  const periods: PnlPeriod[] = ['1天', '1周', '1个月', '1年', '年初至今', '全部']
+  const periods: PnlPeriod[] = ['1D', '1W', '1M', '1Y', 'YTD', 'All']
   const tabs: { key: PortfolioTab; label: string }[] = [
-    { key: 'positions', label: `持仓 (${mockPositions.length})` },
-    { key: 'orders', label: '未成交订单' },
-    { key: 'history', label: `历史记录 (${mockTrades.length})` },
+    { key: 'positions', label: `Positions (${mockPositions.length})` },
+    { key: 'orders', label: 'Open Orders' },
+    { key: 'history', label: `History (${mockTrades.length})` },
   ]
 
   if (!user) {
@@ -527,9 +527,9 @@ export default function PortfolioPage() {
           <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mx-auto mb-5">
             <Wallet className="w-8 h-8 text-blue-400" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">查看你的持仓</h2>
-          <p className="text-gray-400 mb-8">登录后查看你的所有持仓和交易记录</p>
-          <Button size="lg" onClick={openLoginModal}>登录 / 注册</Button>
+          <h2 className="text-2xl font-bold text-white mb-2">View Your Portfolio</h2>
+          <p className="text-gray-400 mb-8">Sign in to view your positions and trade history</p>
+          <Button size="lg" onClick={openLoginModal}>Sign In / Register</Button>
         </div>
         <LoginModal open={isLoginModalOpen} onClose={closeLoginModal} />
       </>
@@ -541,7 +541,7 @@ export default function PortfolioPage() {
 
       {/* ── Header ── */}
       <div>
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">资产组合</p>
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Portfolio</p>
         <div className="flex items-end gap-3 flex-wrap">
           <h1 className="text-5xl font-bold text-white tracking-tight">{formatCurrency(totalValue + 1250.50)}</h1>
           <span
@@ -551,12 +551,12 @@ export default function PortfolioPage() {
             )}
           >
             {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-            过去{period}&nbsp;{isPositive ? '+' : ''}{formatCurrency(delta)}&nbsp;({isPositive ? '+' : ''}{pct.toFixed(2)}%)
+            Past {period}&nbsp;{isPositive ? '+' : ''}{formatCurrency(delta)}&nbsp;({isPositive ? '+' : ''}{pct.toFixed(2)}%)
           </span>
         </div>
         <div className="flex gap-6 mt-2 text-xs text-gray-500">
-          <span>持仓价值 <span className="text-gray-300 font-medium ml-1">{formatCurrency(totalValue)}</span></span>
-          <span>现金余额 <span className="text-gray-300 font-medium ml-1">{formatCurrency(1250.50)}</span></span>
+          <span>Positions <span className="text-gray-300 font-medium ml-1">{formatCurrency(totalValue)}</span></span>
+          <span>Cash <span className="text-gray-300 font-medium ml-1">{formatCurrency(1250.50)}</span></span>
         </div>
       </div>
 
@@ -611,7 +611,7 @@ export default function PortfolioPage() {
           onClick={() => setDepositOpen(true)}
         >
           <Download className="w-4 h-4" />
-          充值
+          Deposit
         </Button>
         <Button
           variant="outline"
@@ -619,7 +619,7 @@ export default function PortfolioPage() {
           onClick={() => setWithdrawOpen(true)}
         >
           <Upload className="w-4 h-4" />
-          提现
+          Withdraw
         </Button>
       </div>
 
@@ -657,9 +657,9 @@ export default function PortfolioPage() {
                       <Badge variant={pos.outcome === 'yes' ? 'success' : 'danger'}>
                         {pos.outcome.toUpperCase()}
                       </Badge>
-                      <span className="text-xs text-gray-500">{pos.shares} 份</span>
+                      <span className="text-xs text-gray-500">{pos.shares} shares</span>
                       <span className="text-xs text-gray-600">·</span>
-                      <span className="text-xs text-gray-500">均价 {Math.round(pos.avgPrice * 100)}¢</span>
+                      <span className="text-xs text-gray-500">avg {Math.round(pos.avgPrice * 100)}¢</span>
                     </div>
                     <h3 className="text-sm font-medium text-white leading-snug line-clamp-2">
                       {pos.market.title}
@@ -684,7 +684,7 @@ export default function PortfolioPage() {
                       onClick={() => setSellTarget(pos)}
                       className="mt-1 px-3 py-1 rounded-md text-xs font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors"
                     >
-                      卖出
+                      Sell
                     </button>
                   </div>
                 </div>
@@ -692,8 +692,8 @@ export default function PortfolioPage() {
                 {/* Progress bar */}
                 <div className="mt-3">
                   <div className="flex justify-between text-xs text-gray-600 mb-1">
-                    <span>当前 {Math.round(pos.currentPrice * 100)}¢</span>
-                    <span>结算 100¢</span>
+                    <span>Current {Math.round(pos.currentPrice * 100)}¢</span>
+                    <span>Settlement 100¢</span>
                   </div>
                   <div className="h-1 rounded-full bg-gray-800">
                     <div
@@ -717,8 +717,8 @@ export default function PortfolioPage() {
               <Clock className="w-8 h-8 text-gray-600" />
             </div>
             <div>
-              <p className="text-gray-300 font-semibold text-base mb-1">暂无未成交订单</p>
-              <p className="text-gray-600 text-sm">你的限价单和挂单将显示在这里</p>
+              <p className="text-gray-300 font-semibold text-base mb-1">No open orders</p>
+              <p className="text-gray-600 text-sm">Your limit orders and pending trades will appear here</p>
             </div>
           </div>
         )}
@@ -729,12 +729,12 @@ export default function PortfolioPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-800 bg-gray-900/80">
-                  <th className="text-left px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide">市场</th>
-                  <th className="text-left px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide hidden sm:table-cell">操作</th>
-                  <th className="text-right px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide">份额</th>
-                  <th className="text-right px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide">价格</th>
-                  <th className="text-right px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide">总额</th>
-                  <th className="text-right px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide hidden md:table-cell">时间</th>
+                  <th className="text-left px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide">Market</th>
+                  <th className="text-left px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide hidden sm:table-cell">Action</th>
+                  <th className="text-right px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide">Shares</th>
+                  <th className="text-right px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide">Price</th>
+                  <th className="text-right px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide">Total</th>
+                  <th className="text-right px-4 py-3.5 text-xs text-gray-500 font-medium uppercase tracking-wide hidden md:table-cell">Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800/60">
@@ -751,7 +751,7 @@ export default function PortfolioPage() {
                     </td>
                     <td className="px-4 py-3.5 hidden sm:table-cell">
                       <Badge variant={trade.type === 'buy' ? 'success' : 'danger'}>
-                        {trade.type === 'buy' ? '买入' : '卖出'}
+                        {trade.type === 'buy' ? 'Buy' : 'Sell'}
                       </Badge>
                     </td>
                     <td className="px-4 py-3.5 text-right text-gray-300 text-xs font-medium">{trade.shares}</td>

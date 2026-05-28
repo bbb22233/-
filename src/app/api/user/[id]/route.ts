@@ -42,7 +42,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // Check if username is taken by another user
     const existing = await prisma.user.findUnique({ where: { username: trimmed } })
     if (existing && existing.id !== id) {
-      return NextResponse.json({ error: '用户名已被占用' }, { status: 409 })
+      return NextResponse.json({ error: 'Username already taken' }, { status: 409 })
     }
 
     const updated = await prisma.user.update({

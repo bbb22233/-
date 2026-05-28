@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     // Verify withdrawal password if user has set one
     if (user.withdrawalPassword) {
       if (!withdrawalPassword || withdrawalPassword !== user.withdrawalPassword) {
-        return NextResponse.json({ error: '提款密码错误' }, { status: 401 })
+        return NextResponse.json({ error: 'Incorrect Withdrawal PIN' }, { status: 401 })
       }
     }
 

@@ -39,8 +39,8 @@ export default function LeaderboardPage() {
           <Trophy className="w-5 h-5 text-yellow-400" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-white">排行榜</h1>
-          <p className="text-gray-400 text-sm">按总收益排名</p>
+          <h1 className="text-2xl font-bold text-white">Leaderboard</h1>
+          <p className="text-gray-400 text-sm">Ranked by total profit</p>
         </div>
       </div>
 
@@ -70,7 +70,7 @@ export default function LeaderboardPage() {
               </div>
               <p className="text-xs font-medium text-white truncate">{entry.user.username}</p>
               <p className="text-sm font-bold text-emerald-400 mt-1">+{formatCurrency(entry.profit)}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{entry.winRate}% 胜率</p>
+              <p className="text-xs text-gray-500 mt-0.5">{entry.winRate}% win rate</p>
             </div>
           )
         })}
@@ -87,7 +87,7 @@ export default function LeaderboardPage() {
               period === p ? 'bg-blue-600 text-white' : 'bg-gray-900 border border-gray-700 text-gray-400 hover:text-white'
             )}
           >
-            {p === 'all' ? '全部时间' : p === 'month' ? '本月' : '本周'}
+            {p === 'all' ? 'All Time' : p === 'month' ? 'This Month' : 'This Week'}
           </button>
         ))}
       </div>
@@ -95,11 +95,11 @@ export default function LeaderboardPage() {
       {/* My rank banner */}
       {user && myRank && (
         <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 p-4 mb-4 flex items-center gap-4">
-          <span className="text-sm text-blue-400 font-medium">我的排名</span>
+          <span className="text-sm text-blue-400 font-medium">My Rank</span>
           <span className="text-2xl font-bold text-white">#{myRank.rank}</span>
           <div className="ml-auto text-right">
             <p className="text-sm font-bold text-emerald-400">+{formatCurrency(myRank.profit)}</p>
-            <p className="text-xs text-gray-500">{myRank.winRate}% 胜率</p>
+            <p className="text-xs text-gray-500">{myRank.winRate}% win rate</p>
           </div>
         </div>
       )}
@@ -109,11 +109,11 @@ export default function LeaderboardPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-800 bg-gray-900/50">
-              <th className="text-left px-4 py-3 text-xs text-gray-500 font-medium w-12">排名</th>
-              <th className="text-left px-4 py-3 text-xs text-gray-500 font-medium">用户</th>
-              <th className="text-right px-4 py-3 text-xs text-gray-500 font-medium">总收益</th>
-              <th className="text-right px-4 py-3 text-xs text-gray-500 font-medium hidden sm:table-cell">胜率</th>
-              <th className="text-right px-4 py-3 text-xs text-gray-500 font-medium hidden md:table-cell">参与市场</th>
+              <th className="text-left px-4 py-3 text-xs text-gray-500 font-medium w-12">Rank</th>
+              <th className="text-left px-4 py-3 text-xs text-gray-500 font-medium">User</th>
+              <th className="text-right px-4 py-3 text-xs text-gray-500 font-medium">Total Profit</th>
+              <th className="text-right px-4 py-3 text-xs text-gray-500 font-medium hidden sm:table-cell">Win Rate</th>
+              <th className="text-right px-4 py-3 text-xs text-gray-500 font-medium hidden md:table-cell">Markets</th>
             </tr>
           </thead>
           <tbody>
@@ -138,7 +138,7 @@ export default function LeaderboardPage() {
                     </div>
                     <span className={cn('text-sm font-medium', user?.username === entry.user.username ? 'text-blue-400' : 'text-white')}>
                       {entry.user.username}
-                      {user?.username === entry.user.username && ' (我)'}
+                      {user?.username === entry.user.username && ' (you)'}
                     </span>
                   </Link>
                 </td>

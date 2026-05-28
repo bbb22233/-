@@ -58,15 +58,15 @@ function getCategoryLabel(category: string): string {
     DeFi: 'DeFi',
     Layer2: 'Layer2',
     NFT: 'NFT',
-    Regulation: '监管',
-    Politics: '政治',
-    Elections: '选举',
-    Sports: '体育',
-    Entertainment: '娱乐',
+    Regulation: 'Regulation',
+    Politics: 'Politics',
+    Elections: 'Elections',
+    Sports: 'Sports',
+    Entertainment: 'Entertainment',
     AI: 'AI',
-    Tech: '科技',
-    Economy: '经济',
-    World: '世界',
+    Tech: 'Tech',
+    Economy: 'Economy',
+    World: 'World',
   }
   return map[category] || category
 }
@@ -99,7 +99,7 @@ export const MarketCard = memo(function MarketCard({ market }: MarketCardProps) 
               {market.title}
             </h3>
             <p className="text-xs text-gray-500">
-              {categoryLabel} · 截至 {new Date(market.endDate).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
+              {categoryLabel} · Closes {new Date(market.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </p>
           </div>
         </div>
@@ -110,13 +110,13 @@ export const MarketCard = memo(function MarketCard({ market }: MarketCardProps) 
           {isResolved ? (
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-gray-700 text-gray-300">
-                已结算
+                Resolved
               </span>
               <span className={cn(
                 'text-sm font-bold',
                 market.resolvedOutcome === 'yes' ? 'text-emerald-400' : 'text-red-400'
               )}>
-                {market.resolvedOutcome === 'yes' ? 'YES 胜出' : 'NO 胜出'}
+                {market.resolvedOutcome === 'yes' ? 'YES wins' : 'NO wins'}
               </span>
             </div>
           ) : (
@@ -135,10 +135,10 @@ export const MarketCard = memo(function MarketCard({ market }: MarketCardProps) 
           {!isResolved && (
             <div className="flex items-center gap-2">
               <span className="px-3 py-1.5 rounded-full text-xs font-semibold border border-emerald-600 text-emerald-400 hover:bg-emerald-600/10 transition-colors">
-                是 ↑
+                YES ↑
               </span>
               <span className="px-3 py-1.5 rounded-full text-xs font-semibold border border-red-600 text-red-400 hover:bg-red-600/10 transition-colors">
-                否 ↓
+                NO ↓
               </span>
             </div>
           )}
@@ -147,7 +147,7 @@ export const MarketCard = memo(function MarketCard({ market }: MarketCardProps) 
         {/* Bottom: volume + participants + bookmark */}
         <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-800/60">
           <div className="flex items-center gap-3">
-            <span>{formatVolume(market.volume)} 交易量</span>
+            <span>{formatVolume(market.volume)} vol.</span>
             <span className="flex items-center gap-1">
               <Users className="w-3 h-3" />
               {market.participantCount.toLocaleString()}

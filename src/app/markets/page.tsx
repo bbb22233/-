@@ -10,21 +10,21 @@ import { cn } from '@/lib/utils'
 type SortType = 'volume' | 'newest' | 'ending'
 
 const categories: { label: string; value: MarketCategory | 'All' }[] = [
-  { label: '全部', value: 'All' },
+  { label: 'All', value: 'All' },
   { label: 'BTC', value: 'BTC' },
   { label: 'ETH', value: 'ETH' },
   { label: 'DeFi', value: 'DeFi' },
   { label: 'Layer2', value: 'Layer2' },
   { label: 'NFT', value: 'NFT' },
   { label: 'AI', value: 'AI' },
-  { label: '政治', value: 'Politics' },
-  { label: '选举', value: 'Elections' },
-  { label: '体育', value: 'Sports' },
-  { label: '娱乐', value: 'Entertainment' },
-  { label: '科技', value: 'Tech' },
-  { label: '经济', value: 'Economy' },
-  { label: '世界', value: 'World' },
-  { label: '监管', value: 'Regulation' },
+  { label: 'Politics', value: 'Politics' },
+  { label: 'Elections', value: 'Elections' },
+  { label: 'Sports', value: 'Sports' },
+  { label: 'Entertainment', value: 'Entertainment' },
+  { label: 'Tech', value: 'Tech' },
+  { label: 'Economy', value: 'Economy' },
+  { label: 'World', value: 'World' },
+  { label: 'Regulation', value: 'Regulation' },
 ]
 
 function Skeleton() {
@@ -78,7 +78,7 @@ export default function MarketsPage() {
         <input
           ref={inputRef}
           type="text"
-          placeholder="搜索市场..."
+          placeholder="Search markets..."
           className="w-full h-11 pl-9 pr-4 rounded-xl border border-gray-700 bg-gray-900 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={searchInput}
           onChange={e => setSearchInput(e.target.value)}
@@ -106,15 +106,15 @@ export default function MarketsPage() {
           value={sort}
           onChange={e => setSort(e.target.value as SortType)}
         >
-          <option value="volume">按交易量</option>
-          <option value="newest">最新</option>
-          <option value="ending">即将结束</option>
+          <option value="volume">By Volume</option>
+          <option value="newest">Newest</option>
+          <option value="ending">Ending Soon</option>
         </select>
       </div>
 
       {/* Count row */}
       <p className="text-xs text-gray-500 mb-3">
-        {search ? `搜索"${search}"` : categories.find(c => c.value === category)?.label} · {markets.length} 个市场
+        {search ? `Search: "${search}"` : categories.find(c => c.value === category)?.label} · {markets.length} markets
       </p>
 
       {/* Results — 2-column grid */}
@@ -124,7 +124,7 @@ export default function MarketsPage() {
         </div>
       ) : markets.length === 0 ? (
         <div className="text-center py-16 text-gray-500 text-sm">
-          {search ? `没有找到"${search}"相关市场` : '暂无市场'}
+          {search ? `No markets found for "${search}"` : 'No markets available'}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
