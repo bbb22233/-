@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Mail, Loader2, Wallet, CheckCircle } from 'lucide-react'
+import { Mail, Loader2, Wallet, CheckCircle, ArrowLeft } from 'lucide-react'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,47 +12,82 @@ interface LoginModalProps {
   onClose: () => void
 }
 
-type Step = 'email' | 'otp' | 'creating' | 'done'
+type Step = 'email' | 'otp' | 'loading' | 'done'
 
 export function LoginModal({ open, onClose }: LoginModalProps) {
-  const { login, isLoading } = useAuth()
+  const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [step, setStep] = useState<Step>('email')
   const [error, setError] = useState('')
+  const [sending, setSending] = useState(false)
+  const [countdown, setCountdown] = useState(0)
 
-  const handleSendOtp = async () => {
-    if (!email || !email.includes('@')) {
+  const startCountdown = () => {
+    setCountdown(60)
+    const t = setInterval(() => {
+      setCountdown(n => {
+        if (n <= 1) { clearInterval(t); return 0 }
+        return n - 1
+      })
+    }, 1000)
+  }
+
+  const handleSendCode = async () => {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError('请输入有效的邮箱地址')
       return
     }
     setError('')
-    setStep('otp')
+    setSending(true)
+    try {
+      const res = await fetch('/api/auth/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? '发送失败'); return }
+      setStep('otp')
+      startCountdown()
+    } catch {
+      setError('网络错误，请重试')
+    } finally {
+      setSending(false)
+    }
   }
 
-  const handleVerifyOtp = async () => {
-    if (otp.length < 4) {
-      setError('请输入验证码')
-      return
-    }
+  const handleVerify = async () => {
+    if (otp.length !== 6) { setError('请输入 6 位验证码'); return }
     setError('')
-    setStep('creating')
-    await login(email)
-    setStep('done')
-    setTimeout(() => {
-      onClose()
-      setStep('email')
-      setEmail('')
-      setOtp('')
-    }, 1500)
+    setStep('loading')
+    try {
+      const res = await fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code: otp }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? '验证失败'); setStep('otp'); return }
+      // Use login from useAuth to set user state
+      await login(email, data)
+      setStep('done')
+      setTimeout(() => { handleClose() }, 1500)
+    } catch {
+      setError('网络错误，请重试')
+      setStep('otp')
+    }
   }
 
   const handleClose = () => {
     onClose()
-    setStep('email')
-    setEmail('')
-    setOtp('')
-    setError('')
+    setTimeout(() => {
+      setStep('email')
+      setEmail('')
+      setOtp('')
+      setError('')
+      setCountdown(0)
+    }, 300)
   }
 
   return (
@@ -62,7 +97,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
           <Wallet className="w-6 h-6 text-blue-400" />
         </div>
         <h2 className="text-xl font-bold text-white">登录 / 注册</h2>
-        <p className="text-gray-400 text-sm mt-1">使用邮箱登录，自动生成智能钱包</p>
+        <p className="text-gray-400 text-sm mt-1">使用邮箱验证码登录</p>
       </div>
 
       {step === 'email' && (
@@ -77,72 +112,75 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
                 className="pl-9"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSendOtp()}
+                onKeyDown={e => e.key === 'Enter' && handleSendCode()}
+                autoFocus
               />
             </div>
-            {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
+            {error && <p className="text-red-400 text-xs mt-1.5">{error}</p>}
           </div>
-          <Button className="w-full" onClick={handleSendOtp}>
-            发送验证码
+          <Button className="w-full h-11" onClick={handleSendCode} disabled={sending}>
+            {sending ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />发送中...</> : '发送验证码'}
           </Button>
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-800" /></div>
-            <div className="relative flex justify-center text-xs"><span className="bg-gray-950 px-2 text-gray-500">或使用社交账号</span></div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" className="w-full text-sm" onClick={() => login('google@demo.com')}>
-              Google 登录
-            </Button>
-            <Button variant="outline" className="w-full text-sm" onClick={() => login('twitter@demo.com')}>
-              Twitter 登录
-            </Button>
-          </div>
         </div>
       )}
 
       {step === 'otp' && (
         <div className="space-y-4">
-          <div className="text-center text-sm text-gray-400 mb-2">
-            验证码已发送至 <span className="text-white">{email}</span>
+          <button
+            onClick={() => { setStep('email'); setOtp(''); setError('') }}
+            className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors mb-1"
+          >
+            <ArrowLeft className="w-3 h-3" /> 更换邮箱
+          </button>
+          <div className="text-sm text-gray-400 bg-gray-800/60 rounded-lg px-3 py-2.5">
+            验证码已发送至 <span className="text-white font-medium">{email}</span>
           </div>
           <div>
-            <label className="text-sm text-gray-400 mb-1.5 block">输入验证码</label>
+            <label className="text-sm text-gray-400 mb-1.5 block">输入 6 位验证码</label>
             <Input
               type="text"
+              inputMode="numeric"
               placeholder="000000"
               maxLength={6}
-              className="text-center text-2xl tracking-widest"
+              className="text-center text-2xl tracking-[0.5em] font-mono"
               value={otp}
-              onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
-              onKeyDown={e => e.key === 'Enter' && handleVerifyOtp()}
+              onChange={e => { setOtp(e.target.value.replace(/\D/g, '')); setError('') }}
+              onKeyDown={e => e.key === 'Enter' && handleVerify()}
+              autoFocus
             />
-            {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
+            {error && <p className="text-red-400 text-xs mt-1.5">{error}</p>}
           </div>
-          <Button className="w-full" onClick={handleVerifyOtp} disabled={isLoading}>
+          <Button className="w-full h-11" onClick={handleVerify} disabled={otp.length !== 6}>
             验证并登录
           </Button>
-          <button className="w-full text-sm text-gray-500 hover:text-gray-300" onClick={() => setStep('email')}>
-            重新发送
+          <button
+            className="w-full text-sm text-gray-500 hover:text-gray-300 disabled:opacity-40 transition-colors"
+            onClick={handleSendCode}
+            disabled={countdown > 0 || sending}
+          >
+            {countdown > 0 ? `重新发送 (${countdown}s)` : '重新发送验证码'}
           </button>
         </div>
       )}
 
-      {step === 'creating' && (
-        <div className="py-8 text-center space-y-4">
+      {step === 'loading' && (
+        <div className="py-10 text-center space-y-4">
           <Loader2 className="w-10 h-10 text-blue-400 animate-spin mx-auto" />
           <div>
-            <p className="text-white font-medium">正在生成智能钱包</p>
-            <p className="text-gray-400 text-sm mt-1">基于 ERC-4337 标准，无需助记词</p>
+            <p className="text-white font-medium">正在登录...</p>
+            <p className="text-gray-500 text-sm mt-1">自动生成智能钱包</p>
           </div>
         </div>
       )}
 
       {step === 'done' && (
-        <div className="py-8 text-center space-y-4">
-          <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto" />
+        <div className="py-10 text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto">
+            <CheckCircle className="w-9 h-9 text-emerald-400" />
+          </div>
           <div>
-            <p className="text-white font-medium">登录成功！</p>
-            <p className="text-gray-400 text-sm mt-1">智能钱包已就绪</p>
+            <p className="text-white font-semibold text-lg">登录成功！</p>
+            <p className="text-gray-500 text-sm mt-1">智能钱包已就绪</p>
           </div>
         </div>
       )}

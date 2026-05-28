@@ -84,6 +84,15 @@ model Setting {
   updatedAt DateTime @updatedAt
 }
 
+model VerificationCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
 model Trade {
   id        String   @id @default(cuid())
   marketId  String

@@ -13,49 +13,31 @@ export function useAuth() {
     if (stored) setUser(JSON.parse(stored))
   }, [])
 
-  const login = async (email: string) => {
+  // Can be called with pre-fetched data (from verify endpoint) or just email (legacy)
+  const login = async (email: string, userData?: Record<string, unknown>) => {
     setIsLoading(true)
     try {
-      const res = await fetch('/api/auth', {
+      const data = userData ?? await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
-      })
-      if (!res.ok) throw new Error('Login failed')
-      const data = await res.json()
+      }).then(r => r.json())
 
-      // Map Prisma User fields to our User type
       const loggedUser: User = {
-        id: data.id,
-        email: data.email,
-        username: data.username,
-        avatarUrl: data.avatarUrl ?? undefined,
-        walletAddress: data.walletAddress ?? '',
-        balance: data.balance ?? 100,
-        totalPnl: data.totalPnl ?? 0,
-        winRate: data.winRate ?? 0,
-        marketsTraded: data.marketsTraded ?? 0,
-        joinedAt: data.createdAt ?? new Date().toISOString(),
+        id: String(data.id),
+        email: String(data.email),
+        username: String(data.username),
+        avatarUrl: data.avatarUrl ? String(data.avatarUrl) : undefined,
+        walletAddress: data.walletAddress ? String(data.walletAddress) : '',
+        balance: Number(data.balance ?? 100),
+        totalPnl: Number(data.totalPnl ?? 0),
+        winRate: Number(data.winRate ?? 0),
+        marketsTraded: Number(data.marketsTraded ?? 0),
+        joinedAt: String(data.createdAt ?? new Date().toISOString()),
       }
 
       setUser(loggedUser)
       localStorage.setItem('auth_user', JSON.stringify(loggedUser))
-      setIsLoginModalOpen(false)
-    } catch {
-      // Fallback: create a minimal local user so UI doesn't break
-      const fallbackUser: User = {
-        id: String(Date.now()),
-        email,
-        username: email.split('@')[0],
-        walletAddress: '',
-        balance: 100,
-        totalPnl: 0,
-        winRate: 0,
-        marketsTraded: 0,
-        joinedAt: new Date().toISOString(),
-      }
-      setUser(fallbackUser)
-      localStorage.setItem('auth_user', JSON.stringify(fallbackUser))
       setIsLoginModalOpen(false)
     } finally {
       setIsLoading(false)
