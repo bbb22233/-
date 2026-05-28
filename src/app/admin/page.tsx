@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Shield, Plus, CheckCircle, XCircle, RefreshCw, Trash2, Globe, TrendingUp, Users, AlertTriangle, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
+import { Shield, Plus, CheckCircle, XCircle, RefreshCw, Trash2, Globe, TrendingUp, Users, AlertTriangle, ChevronDown, ChevronUp, Loader2, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -25,6 +25,28 @@ interface AdminMarket {
   _count?: { trades: number; positions: number }
 }
 
+interface DepositRequestRow {
+  id: string
+  userId: string
+  amount: number
+  txHash: string
+  status: string
+  adminNote: string | null
+  createdAt: string
+  user: { username: string; email: string }
+}
+
+interface WithdrawalRequestRow {
+  id: string
+  userId: string
+  amount: number
+  toAddress: string
+  status: string
+  adminNote: string | null
+  createdAt: string
+  user: { username: string; email: string }
+}
+
 const categories = ['BTC', 'ETH', 'DeFi', 'Layer2', 'NFT', 'Regulation', 'Politics', 'Elections', 'Sports', 'Entertainment', 'AI', 'Tech', 'Economy', 'World']
 
 export default function AdminPage() {
@@ -34,7 +56,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<{ synced: number; errors: number } | null>(null)
-  const [activeTab, setActiveTab] = useState<'markets' | 'create' | 'stats'>('markets')
+  const [activeTab, setActiveTab] = useState<'deposits' | 'markets' | 'create' | 'stats'>('deposits')
   const [settleModal, setSettleModal] = useState<AdminMarket | null>(null)
   const [statusFilter, setStatusFilter] = useState('all')
 
@@ -42,6 +64,15 @@ export default function AdminPage() {
   const [form, setForm] = useState({ title: '', description: '', category: 'BTC', endDate: '', liquidity: '100', tags: '' })
   const [creating, setCreating] = useState(false)
   const [createSuccess, setCreateSuccess] = useState(false)
+
+  // Deposit/Withdrawal management
+  const [depositAddress, setDepositAddress] = useState('')
+  const [savingAddress, setSavingAddress] = useState(false)
+  const [saveAddressMsg, setSaveAddressMsg] = useState('')
+  const [pendingDeposits, setPendingDeposits] = useState<DepositRequestRow[]>([])
+  const [pendingWithdrawals, setPendingWithdrawals] = useState<WithdrawalRequestRow[]>([])
+  const [requestsLoading, setRequestsLoading] = useState(false)
+  const [actionMsg, setActionMsg] = useState<Record<string, string>>({})
 
   const headers = { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET }
 
@@ -56,9 +87,75 @@ export default function AdminPage() {
     }
   }, [])
 
+  const loadSettings = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/settings')
+      const data: Record<string, string> = await res.json()
+      if (data.depositAddress) setDepositAddress(data.depositAddress)
+    } catch { /* ignore */ }
+  }, [])
+
+  const loadPendingRequests = useCallback(async () => {
+    setRequestsLoading(true)
+    try {
+      const res = await fetch('/api/admin/requests?status=pending', { headers })
+      const data = await res.json()
+      if (data.deposits) setPendingDeposits(data.deposits)
+      if (data.withdrawals) setPendingWithdrawals(data.withdrawals)
+    } finally {
+      setRequestsLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
-    if (authenticated) loadMarkets()
-  }, [authenticated, loadMarkets])
+    if (authenticated) {
+      loadMarkets()
+      loadSettings()
+      loadPendingRequests()
+    }
+  }, [authenticated, loadMarkets, loadSettings, loadPendingRequests])
+
+  const handleSaveAddress = async () => {
+    setSavingAddress(true)
+    setSaveAddressMsg('')
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ key: 'depositAddress', value: depositAddress }),
+      })
+      if (res.ok) {
+        setSaveAddressMsg('保存成功')
+      } else {
+        setSaveAddressMsg('保存失败')
+      }
+    } catch {
+      setSaveAddressMsg('网络错误')
+    } finally {
+      setSavingAddress(false)
+      setTimeout(() => setSaveAddressMsg(''), 3000)
+    }
+  }
+
+  const handleRequestAction = async (id: string, type: 'deposit' | 'withdrawal', action: 'approve' | 'reject') => {
+    try {
+      const res = await fetch(`/api/admin/requests/${id}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ type, action }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setActionMsg(prev => ({ ...prev, [id]: action === 'approve' ? '已批准' : '已拒绝' }))
+        loadPendingRequests()
+      } else {
+        setActionMsg(prev => ({ ...prev, [id]: data.error ?? '操作失败' }))
+      }
+    } catch {
+      setActionMsg(prev => ({ ...prev, [id]: '网络错误' }))
+    }
+    setTimeout(() => setActionMsg(prev => { const n = { ...prev }; delete n[id]; return n }), 3000)
+  }
 
   const handleLogin = () => {
     if (password === ADMIN_SECRET) setAuthenticated(true)
@@ -202,13 +299,168 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-gray-800 mb-6">
-        {(['markets', 'create', 'stats'] as const).map(tab => (
+        {(['deposits', 'markets', 'create', 'stats'] as const).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className={cn('px-4 py-2.5 text-sm font-medium transition-colors border-b-2', activeTab === tab ? 'text-white border-blue-500' : 'text-gray-500 border-transparent hover:text-gray-300')}>
-            {tab === 'markets' ? `市场管理 (${filteredMarkets.length})` : tab === 'create' ? '创建市场' : '数据统计'}
+            {tab === 'deposits' ? `充提管理 (${pendingDeposits.length + pendingWithdrawals.length})` : tab === 'markets' ? `市场管理 (${filteredMarkets.length})` : tab === 'create' ? '创建市场' : '数据统计'}
           </button>
         ))}
       </div>
+
+      {/* Deposits management tab */}
+      {activeTab === 'deposits' && (
+        <div className="space-y-8">
+          {/* Deposit address setting */}
+          <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
+            <h2 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-blue-400" />
+              充值地址设置
+            </h2>
+            <div className="flex gap-3">
+              <Input
+                placeholder="输入充值钱包地址（0x...）"
+                value={depositAddress}
+                onChange={e => setDepositAddress(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={handleSaveAddress} disabled={savingAddress}>
+                {savingAddress ? <Loader2 className="w-4 h-4 animate-spin" /> : '保存'}
+              </Button>
+            </div>
+            {saveAddressMsg && (
+              <p className={cn('text-xs mt-2', saveAddressMsg === '保存成功' ? 'text-emerald-400' : 'text-red-400')}>{saveAddressMsg}</p>
+            )}
+          </div>
+
+          {/* Pending deposits */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-white">待审核充值 ({pendingDeposits.length})</h2>
+              <Button variant="outline" size="sm" onClick={loadPendingRequests} disabled={requestsLoading}>
+                <RefreshCw className={cn('w-3.5 h-3.5 mr-1.5', requestsLoading && 'animate-spin')} />
+                刷新
+              </Button>
+            </div>
+            {pendingDeposits.length === 0 ? (
+              <div className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-8 text-center text-sm text-gray-500">暂无待审核充值</div>
+            ) : (
+              <div className="rounded-xl border border-gray-800 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-800 bg-gray-900/60">
+                      <th className="text-left px-4 py-3 text-xs text-gray-500">用户</th>
+                      <th className="text-right px-4 py-3 text-xs text-gray-500">金额</th>
+                      <th className="text-left px-4 py-3 text-xs text-gray-500 hidden md:table-cell">交易Hash</th>
+                      <th className="text-left px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">时间</th>
+                      <th className="text-right px-4 py-3 text-xs text-gray-500">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingDeposits.map((req, i) => (
+                      <tr key={req.id} className={cn('border-b border-gray-800/50 hover:bg-gray-800/30', i === pendingDeposits.length - 1 && 'border-0')}>
+                        <td className="px-4 py-3.5">
+                          <p className="text-sm text-white font-medium">{req.user.username}</p>
+                          <p className="text-xs text-gray-500">{req.user.email}</p>
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          <span className="text-emerald-400 font-semibold">${req.amount.toFixed(2)}</span>
+                        </td>
+                        <td className="px-4 py-3.5 hidden md:table-cell">
+                          <code className="text-xs text-gray-400 font-mono truncate max-w-[180px] block">{req.txHash}</code>
+                        </td>
+                        <td className="px-4 py-3.5 text-xs text-gray-500 hidden lg:table-cell">{formatDate(req.createdAt)}</td>
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center justify-end gap-1">
+                            {actionMsg[req.id] ? (
+                              <span className="text-xs text-gray-400">{actionMsg[req.id]}</span>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleRequestAction(req.id, 'deposit', 'approve')}
+                                  className="px-2 py-1 rounded text-xs bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 transition-colors"
+                                >
+                                  批准
+                                </button>
+                                <button
+                                  onClick={() => handleRequestAction(req.id, 'deposit', 'reject')}
+                                  className="px-2 py-1 rounded text-xs bg-red-600/20 text-red-400 hover:bg-red-600/40 transition-colors"
+                                >
+                                  拒绝
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Pending withdrawals */}
+          <div>
+            <h2 className="text-base font-semibold text-white mb-3">待审核提款 ({pendingWithdrawals.length})</h2>
+            {pendingWithdrawals.length === 0 ? (
+              <div className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-8 text-center text-sm text-gray-500">暂无待审核提款</div>
+            ) : (
+              <div className="rounded-xl border border-gray-800 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-800 bg-gray-900/60">
+                      <th className="text-left px-4 py-3 text-xs text-gray-500">用户</th>
+                      <th className="text-right px-4 py-3 text-xs text-gray-500">金额</th>
+                      <th className="text-left px-4 py-3 text-xs text-gray-500 hidden md:table-cell">提现地址</th>
+                      <th className="text-left px-4 py-3 text-xs text-gray-500 hidden lg:table-cell">时间</th>
+                      <th className="text-right px-4 py-3 text-xs text-gray-500">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingWithdrawals.map((req, i) => (
+                      <tr key={req.id} className={cn('border-b border-gray-800/50 hover:bg-gray-800/30', i === pendingWithdrawals.length - 1 && 'border-0')}>
+                        <td className="px-4 py-3.5">
+                          <p className="text-sm text-white font-medium">{req.user.username}</p>
+                          <p className="text-xs text-gray-500">{req.user.email}</p>
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          <span className="text-red-400 font-semibold">${req.amount.toFixed(2)}</span>
+                        </td>
+                        <td className="px-4 py-3.5 hidden md:table-cell">
+                          <code className="text-xs text-gray-400 font-mono truncate max-w-[180px] block">{req.toAddress}</code>
+                        </td>
+                        <td className="px-4 py-3.5 text-xs text-gray-500 hidden lg:table-cell">{formatDate(req.createdAt)}</td>
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center justify-end gap-1">
+                            {actionMsg[req.id] ? (
+                              <span className="text-xs text-gray-400">{actionMsg[req.id]}</span>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleRequestAction(req.id, 'withdrawal', 'approve')}
+                                  className="px-2 py-1 rounded text-xs bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 transition-colors"
+                                >
+                                  批准
+                                </button>
+                                <button
+                                  onClick={() => handleRequestAction(req.id, 'withdrawal', 'reject')}
+                                  className="px-2 py-1 rounded text-xs bg-red-600/20 text-red-400 hover:bg-red-600/40 transition-colors"
+                                >
+                                  拒绝
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Markets tab */}
       {activeTab === 'markets' && (

@@ -239,16 +239,54 @@ function WithdrawModal({ open, onClose, user }: { open: boolean; onClose: () => 
   const [address, setAddress] = useState('')
   const [amount, setAmount] = useState('')
   const [success, setSuccess] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleConfirm = () => {
-    if (!address || !amount) return
-    setSuccess(true)
-    setTimeout(() => {
-      setSuccess(false)
-      setAddress('')
-      setAmount('')
-      onClose()
-    }, 2000)
+  const balance = user?.balance ?? 0
+
+  const handleConfirm = async () => {
+    if (!user) {
+      setError('请先登录')
+      return
+    }
+    if (!address.trim()) {
+      setError('请输入提现地址')
+      return
+    }
+    const parsedAmount = parseFloat(amount)
+    if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) {
+      setError('请输入有效金额')
+      return
+    }
+    if (parsedAmount > balance) {
+      setError('提现金额超过可用余额')
+      return
+    }
+    setError('')
+    setLoading(true)
+    try {
+      const res = await fetch('/api/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, amount: parsedAmount, toAddress: address.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error ?? '提交失败')
+        return
+      }
+      setSuccess(true)
+      setTimeout(() => {
+        setSuccess(false)
+        setAddress('')
+        setAmount('')
+        onClose()
+      }, 3000)
+    } catch {
+      setError('网络错误，请重试')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -258,11 +296,16 @@ function WithdrawModal({ open, onClose, user }: { open: boolean; onClose: () => 
           <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
             <CheckCircle2 className="w-9 h-9 text-emerald-400" />
           </div>
-          <p className="text-white font-semibold text-lg">提现申请已提交</p>
-          <p className="text-gray-400 text-sm">资金将在处理后到账</p>
+          <p className="text-white font-semibold text-lg">提款申请已提交</p>
+          <p className="text-gray-400 text-sm">等待管理员审核</p>
         </div>
       ) : (
         <div className="space-y-5">
+          {!user && (
+            <div className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3">
+              <p className="text-xs text-red-400">请先登录后再提现</p>
+            </div>
+          )}
           <div>
             <p className="text-xs text-gray-500 mb-2 font-medium">提现地址</p>
             <Input
@@ -276,7 +319,7 @@ function WithdrawModal({ open, onClose, user }: { open: boolean; onClose: () => 
               <p className="text-xs text-gray-500 font-medium">提现金额</p>
               <button
                 className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
-                onClick={() => setAmount('1250.50')}
+                onClick={() => setAmount(String(balance))}
               >
                 全部提现
               </button>
@@ -294,18 +337,21 @@ function WithdrawModal({ open, onClose, user }: { open: boolean; onClose: () => 
           </div>
           <div className="rounded-lg bg-gray-800/50 border border-gray-700/60 px-4 py-3 flex items-center justify-between">
             <span className="text-xs text-gray-500">可用余额</span>
-            <span className="text-sm text-white font-semibold">$1,250.50</span>
+            <span className="text-sm text-white font-semibold">{formatCurrency(balance)}</span>
           </div>
           <div className="rounded-lg bg-yellow-500/5 border border-yellow-500/20 px-4 py-2.5">
             <p className="text-xs text-yellow-400/80">提现通常在 1-3 个工作日内处理，请确保地址正确。</p>
           </div>
+          {error && (
+            <p className="text-xs text-red-400">{error}</p>
+          )}
           <Button
             className="w-full h-11"
             variant="outline"
             onClick={handleConfirm}
-            disabled={!address || !amount}
+            disabled={loading || !user}
           >
-            确认提现
+            {loading ? '提交中...' : '确认提现'}
           </Button>
         </div>
       )}
